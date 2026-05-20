@@ -1,0 +1,104 @@
+# Terminal 2 — Python Producer (REST → RabbitMQ)
+
+This terminal runs a Flask API that accepts JSON events via POST and publishes them to RabbitMQ.
+
+Make sure **Terminal 1 (RabbitMQ)** is already running before starting this one.
+
+---
+
+## 1. Install Python (if not installed)
+
+**macOS (Homebrew):**
+```bash
+brew install python@3.13
+```
+
+**Ubuntu / Debian:**
+```bash
+sudo apt update && sudo apt install -y python3 python3-pip python3-venv
+```
+
+**Verify:**
+```bash
+python3 --version
+```
+
+---
+
+## 2. Clone the repo & go to the producer directory
+
+```bash
+cd ~/JR_2025/Projects/may_observability/rabbitmq-ingest/python-producer
+```
+
+---
+
+## 3. Create & activate a virtual environment
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+You should see `(.venv)` in your prompt.
+
+---
+
+## 4. Install Python dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+Installs `flask` (web framework) and `pika` (RabbitMQ client).
+
+---
+
+## 5. Run the producer
+
+```bash
+python app.py
+```
+
+The server starts on `http://0.0.0.0:25001`.
+
+---
+
+## 6. Send a test event (from another terminal)
+
+```bash
+curl -X POST http://localhost:25001/ingest \
+  -H "Content-Type: application/json" \
+  -d '{"event": "page_view", "user": "alice", "timestamp": "2026-05-18T12:00:00Z"}'
+```
+
+Expected response: `{"status": "published"}` (HTTP 201)
+
+You should see the event appear in **Terminal 3 (Go Consumer)**.
+
+---
+
+## Environment variables (optional)
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `RABBITMQ_HOST` | `localhost` | RabbitMQ server address |
+| `RABBITMQ_QUEUE` | `events` | Queue name |
+| `RABBITMQ_USER` | `guest` | RabbitMQ username |
+| `RABBITMQ_PASS` | `guest` | RabbitMQ password |
+
+Set them before running, e.g.:
+```bash
+export RABBITMQ_HOST=192.168.1.50
+python app.py
+```
+
+---
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| `pika.exceptions.AMQPConnectionError` | RabbitMQ is not running — go back to Terminal 1 |
+| Port 25001 in use | Kill the other process: `lsof -ti :25001 | xargs kill` |
+| `pip: command not found` | Make sure the virtual environment is activated (`source .venv/bin/activate`) |

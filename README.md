@@ -51,12 +51,12 @@ pip install -r requirements.txt
 python app.py
 ```
 
-The server starts on `http://0.0.0.0:5000`.
+The server starts on `http://0.0.0.0:25001`.
 
 ### Send data
 
 ```bash
-curl -X POST http://localhost:5000/ingest \
+curl -X POST http://localhost:25001/ingest \
   -H "Content-Type: application/json" \
   -d '{"event": "page_view", "user": "alice", "timestamp": "2026-05-18T12:00:00Z"}'
 ```
@@ -101,7 +101,7 @@ Same as the Python producer – both must point to the same RabbitMQ instance an
 Machine A                    Network               Machine B
 ┌──────────────┐     POST     ┌──────────┐    AMQP    ┌──────────────┐
 │  Python REST │ ─────────→ │ RabbitMQ │ ────────→ │  Go Consumer  │
-│  (producer)  │  :5000     │  :5672   │           │  (consumer)   │
+│  (producer)  │  :25001    │  :5672   │           │  (consumer)   │
 └──────────────┘             └──────────┘           └──────────────┘
 ```
 
