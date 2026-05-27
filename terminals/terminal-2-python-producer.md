@@ -102,3 +102,47 @@ python app.py
 | `pika.exceptions.AMQPConnectionError` | RabbitMQ is not running — go back to Terminal 1 |
 | Port 25001 in use | Kill the other process: `lsof -ti :25001 | xargs kill` |
 | `pip: command not found` | Make sure the virtual environment is activated (`source .venv/bin/activate`) |
+
+---
+
+## Docker (alternative to local Python)
+
+If you prefer to run the producer in a container instead of a local Python process:
+
+### Build the image
+
+```bash
+docker build -t python-producer python-producer/
+```
+
+### Option A — Foreground (logs visible in terminal)
+
+```bash
+docker run --rm \
+  -p 25001:25001 \
+  -e RABBITMQ_HOST=host.docker.internal \
+  --name python-producer \
+  python-producer
+```
+
+The container prints logs directly to this terminal. Press `Ctrl+C` to stop.
+
+### Option B — Background (frees up terminal)
+
+```bash
+docker run -d \
+  -p 25001:25001 \
+  -e RABBITMQ_HOST=host.docker.internal \
+  --name python-producer \
+  python-producer
+```
+
+**View logs live (background mode):**
+```bash
+docker logs -f python-producer
+```
+
+**Stop the container:**
+```bash
+docker stop python-producer
+```

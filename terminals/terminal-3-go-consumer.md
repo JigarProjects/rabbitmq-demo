@@ -100,3 +100,45 @@ Same as the producer — both must point to the **same** RabbitMQ instance and q
 | `dial tcp: connect: connection refused` | RabbitMQ is not running — go back to Terminal 1 |
 | `go: go.mod file not found` | You're in the wrong directory — `cd go-consumer` |
 | Module download fails | Check internet connection, or set `GOPROXY=https://proxy.golang.org,direct` |
+
+---
+
+## Docker (alternative to local Go)
+
+If you prefer to run the consumer in a container instead of a local Go process:
+
+### Build the image
+
+```bash
+docker build -t go-consumer go-consumer/
+```
+
+### Option A — Foreground (logs visible in terminal)
+
+```bash
+docker run --rm \
+  -e RABBITMQ_HOST=host.docker.internal \
+  --name go-consumer \
+  go-consumer
+```
+
+The container prints logs directly to this terminal. Press `Ctrl+C` to stop.
+
+### Option B — Background (frees up terminal)
+
+```bash
+docker run -d \
+  -e RABBITMQ_HOST=host.docker.internal \
+  --name go-consumer \
+  go-consumer
+```
+
+**View logs live (background mode):**
+```bash
+docker logs -f go-consumer
+```
+
+**Stop the container:**
+```bash
+docker stop go-consumer
+```

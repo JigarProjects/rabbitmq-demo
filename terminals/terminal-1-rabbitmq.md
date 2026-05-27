@@ -28,6 +28,22 @@ docker --version
 
 ## 2. Start RabbitMQ
 
+Choose **one** of the following:
+
+### Option A — Foreground (logs visible in terminal)
+
+```bash
+docker run --rm \
+  --name rabbitmq \
+  -p 5672:5672 \
+  -p 15672:15672 \
+  rabbitmq:4-management
+```
+
+The container prints logs directly to this terminal. Press `Ctrl+C` to stop.
+
+### Option B — Background (frees up terminal)
+
 ```bash
 docker run -d \
   --name rabbitmq \
@@ -44,11 +60,19 @@ docker run -d \
 docker logs rabbitmq --tail 5
 ```
 
+**View logs live (background mode):**
+```bash
+docker logs -f rabbitmq
+```
+
 ---
 
 ## 3. Keep running
 
-Leave this terminal open — RabbitMQ must stay running for the next two terminals to work.
+RabbitMQ must stay running for the next two terminals to work.
+
+- **Foreground mode** — the container is already running in this terminal; logs are visible live.
+- **Background mode** — check logs at any time with `docker logs rabbitmq` or live-tail with `docker logs -f rabbitmq`.
 
 ---
 
