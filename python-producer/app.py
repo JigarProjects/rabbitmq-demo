@@ -1,10 +1,26 @@
 import json
+import logging
 import os
+import sys
 
 import pika
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
+
+LOG_DIR = os.getenv("LOG_DIR", "/app/logs")
+os.makedirs(LOG_DIR, exist_ok=True)
+
+log_format = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
+file_handler = logging.FileHandler(os.path.join(LOG_DIR, "producer.log"))
+file_handler.setFormatter(log_format)
+stdout_handler = logging.StreamHandler(sys.stdout)
+stdout_handler.setFormatter(log_format)
+
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.INFO)
+root_logger.addHandler(file_handler)
+root_logger.addHandler(stdout_handler)
 
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "localhost")
 RABBITMQ_QUEUE = os.getenv("RABBITMQ_QUEUE", "events")
