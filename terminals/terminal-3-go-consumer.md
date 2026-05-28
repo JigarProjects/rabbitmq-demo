@@ -116,8 +116,12 @@ docker build -t go-consumer go-consumer/
 ### Option A — Foreground (logs visible in terminal)
 
 ```bash
+# Create the log directory first
+mkdir -p logs/consumer
+
 docker run --rm \
   -e RABBITMQ_HOST=host.docker.internal \
+  -v ./logs/consumer:/app/logs \
   --name go-consumer \
   go-consumer
 ```
@@ -127,8 +131,12 @@ The container prints logs directly to this terminal. Press `Ctrl+C` to stop.
 ### Option B — Background (frees up terminal)
 
 ```bash
+# Create the log directory first
+mkdir -p logs/consumer
+
 docker run -d \
   -e RABBITMQ_HOST=host.docker.internal \
+  -v ./logs/consumer:/app/logs \
   --name go-consumer \
   go-consumer
 ```

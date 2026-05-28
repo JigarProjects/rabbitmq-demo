@@ -118,9 +118,13 @@ docker build -t python-producer python-producer/
 ### Option A — Foreground (logs visible in terminal)
 
 ```bash
+# Create the log directory first
+mkdir -p logs/producer
+
 docker run --rm \
   -p 25001:25001 \
   -e RABBITMQ_HOST=host.docker.internal \
+  -v ./logs/producer:/app/logs \
   --name python-producer \
   python-producer
 ```
@@ -130,9 +134,13 @@ The container prints logs directly to this terminal. Press `Ctrl+C` to stop.
 ### Option B — Background (frees up terminal)
 
 ```bash
+# Create the log directory first
+mkdir -p logs/producer
+
 docker run -d \
   -p 25001:25001 \
   -e RABBITMQ_HOST=host.docker.internal \
+  -v ./logs/producer:/app/logs \
   --name python-producer \
   python-producer
 ```

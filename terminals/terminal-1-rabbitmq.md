@@ -33,10 +33,14 @@ Choose **one** of the following:
 ### Option A — Foreground (logs visible in terminal)
 
 ```bash
+# Create the log directory first
+mkdir -p logs/rabbitmq
+
 docker run --rm \
   --name rabbitmq \
   -p 5672:5672 \
   -p 15672:15672 \
+  -v ./logs/rabbitmq:/var/log/rabbitmq \
   rabbitmq:4-management
 ```
 
@@ -45,10 +49,14 @@ The container prints logs directly to this terminal. Press `Ctrl+C` to stop.
 ### Option B — Background (frees up terminal)
 
 ```bash
+# Create the log directory first
+mkdir -p logs/rabbitmq
+
 docker run -d \
   --name rabbitmq \
   -p 5672:5672 \
   -p 15672:15672 \
+  -v ./logs/rabbitmq:/var/log/rabbitmq \
   rabbitmq:4-management
 ```
 

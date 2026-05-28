@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Secrets
+.env
+
+# Logs
+logs/
+*.log
+
+# Go binary (if built locally)
+consumer
