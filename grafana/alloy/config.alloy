@@ -1,0 +1,19 @@
+// Discover all .log files under /logs/
+local.file_match "logs" {
+    path_targets = [
+        {"__path__" = "/logs/**/*.log"},
+    ]
+}
+
+// Stage 1 — tail the discovered files and forward to Loki
+loki.source.file "scrape" {
+    targets    = local.file_match.logs.targets
+    forward_to = [loki.write.loki.receiver]
+}
+
+// Forward all log entries to the local Loki instance
+loki.write "loki" {
+    endpoint {
+        url = "http://loki:3100/loki/api/v1/push"
+    }
+}

@@ -1,0 +1,68 @@
+# Grafana Observability Stack
+
+Full observability for the RabbitMQ ingest demo — logs, metrics, and traces.
+
+## Architecture
+
+```
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│  RabbitMQ    │     │  Producer    │     │  Consumer    │
+│  (broker)    │     │  (Flask)     │     │  (Go)        │
+└──────┬───────┘     └──────┬───────┘     └──────┬───────┘
+       │                    │                     │
+       │               logs/producer/        logs/consumer/
+       │                    │                     │
+       └────────────────────┼─────────────────────┘
+                            │
+                    ┌───────▼────────┐
+                    │  Grafana Alloy │  ← reads log files
+                    │  (collector)   │
+                    └───────┬────────┘
+                            │
+              ┌─────────────┼─────────────┐
+              │             │             │
+       ┌──────▼─────┐ ┌────▼────┐ ┌──────▼──────┐
+       │   Loki     │ │Prometheus│ │   Tempo     │
+       │  (logs)    │ │(metrics) │ │ (traces)    │
+       └──────┬─────┘ └────┬────┘ └──────┬───────┘
+              │             │             │
+              └─────────────┼─────────────┘
+                            │
+                    ┌───────▼────────┐
+                    │    Grafana     │
+                    │  (dashboard)   │
+                    └────────────────┘
+```
+
+## Components
+
+| Component | Status | Purpose |
+|-----------|--------|---------|
+| **Grafana Alloy** | ✅ Setup | Log collector — reads `./logs/**/*.log` and forwards to Loki |
+| **Loki** | ⏳ Ready | Log storage & query engine |
+| **Grafana** | ⏳ Ready | Visualisation & dashboards |
+| **Prometheus** | 📅 Later | Metrics collection & alerts |
+| **Tempo** | 📅 Later | Distributed tracing |
+
+## Quick Start
+
+```bash
+# Start the Grafana stack (Alloy + Loki + Grafana)
+docker compose -f grafana/docker-compose.yml up -d
+
+# Open Grafana at http://localhost:3000 (admin / admin)
+```
+
+## Per-service log files
+
+| Service | Log path |
+|---------|----------|
+| Python Producer | `logs/producer/producer.log` |
+| Go Consumer | `logs/consumer/consumer.log` |
+| RabbitMQ | `logs/rabbitmq/` (stdout via `docker logs`) |
+
+## Future
+
+- **Prometheus** — scrape metrics from the producer and consumer
+- **Tempo** — receive traces from the producer and consumer
+- **Unified dashboards** — combine logs, metrics, and traces in single views
