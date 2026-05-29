@@ -46,6 +46,7 @@ def health():
 def ingest():
     data = request.get_json(silent=True)
     if data is None:
+        logging.warning("Received request with invalid JSON")
         return jsonify({"error": "Invalid JSON"}), 400
 
     connection, channel = get_rabbitmq_channel()
@@ -56,8 +57,10 @@ def ingest():
             body=json.dumps(data),
             properties=pika.BasicProperties(delivery_mode=2),
         )
+        logging.info("Published event: %s", json.dumps(data))
         return jsonify({"status": "published"}), 201
     except Exception as e:
+        logging.error("Failed to publish event: %s", str(e))
         return jsonify({"error": str(e)}), 500
     finally:
         connection.close()

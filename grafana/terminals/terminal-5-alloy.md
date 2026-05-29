@@ -71,9 +71,8 @@ You should see Alloy picking up the log file changes.
 You can also query Loki directly:
 
 ```bash
-curl -s "http://localhost:3100/loki/api/v1/query_range" \
-  --data-urlencode 'query={job="varlogs"}' \
-  -H "Content-Type: application/x-www-form-urlencoded"
+curl -s "http://localhost:3100/loki/api/v1/label/filename/values"
+# Shows all log files being collected: /logs/producer/producer.log, /logs/consumer/consumer.log, /logs/rabbitmq/rabbitmq.log
 ```
 
 ---

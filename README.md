@@ -69,6 +69,7 @@ curl -X POST http://localhost:25001/ingest \
 | `RABBITMQ_QUEUE` | events    | Queue name             |
 | `RABBITMQ_USER`  | guest     | RabbitMQ username      |
 | `RABBITMQ_PASS`  | guest     | RabbitMQ password      |
+| `LOG_DIR`        | /app/logs | Directory for `producer.log` |
 
 ---
 
@@ -93,6 +94,10 @@ The consumer will print every message it receives from the queue.
 
 Same as the Python producer – both must point to the same RabbitMQ instance and queue name.
 
+| Variable   | Default   | Description            |
+|------------|-----------|------------------------|
+| `LOG_DIR`  | /app/logs | Directory for `consumer.log` |
+
 ---
 
 ## Architecture
@@ -103,6 +108,14 @@ Machine A                    Network               Machine B
 │  Python REST │ ─────────→ │ RabbitMQ │ ────────→ │  Go Consumer  │
 │  (producer)  │  :25001    │  :5672   │           │  (consumer)   │
 └──────────────┘             └──────────┘           └──────────────┘
+                                  │
+                          logs/rabbitmq/rabbitmq.log
 ```
 
 Set `RABBITMQ_HOST` to the RabbitMQ machine's IP/hostname on both the producer and consumer.
+
+---
+
+## Observability stack
+
+See `grafana/README.md` for the full observability setup (Loki + Alloy + Grafana) or `terminals/` for step-by-step instructions to run each component individually.

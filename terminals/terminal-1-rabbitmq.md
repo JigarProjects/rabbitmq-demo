@@ -40,6 +40,7 @@ docker run --rm \
   --name rabbitmq \
   -p 5672:5672 \
   -p 15672:15672 \
+  -e RABBITMQ_LOGS=/var/log/rabbitmq/rabbitmq.log \
   -v ./logs/rabbitmq:/var/log/rabbitmq \
   rabbitmq:4-management
 ```
@@ -56,6 +57,7 @@ docker run -d \
   --name rabbitmq \
   -p 5672:5672 \
   -p 15672:15672 \
+  -e RABBITMQ_LOGS=/var/log/rabbitmq/rabbitmq.log \
   -v ./logs/rabbitmq:/var/log/rabbitmq \
   rabbitmq:4-management
 ```

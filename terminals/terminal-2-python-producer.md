@@ -56,8 +56,16 @@ Installs `flask` (web framework) and `pika` (RabbitMQ client).
 
 ## 5. Run the producer
 
+First make sure the log directory exists so Alloy can pick up the logs later:
+
 ```bash
-python app.py
+mkdir -p ../logs/producer
+```
+
+Then start the server with `LOG_DIR` pointing to that directory:
+
+```bash
+LOG_DIR=../logs/producer python app.py
 ```
 
 The server starts on `http://0.0.0.0:25001`.
@@ -81,16 +89,17 @@ You should see the event appear in **Terminal 3 (Go Consumer)**.
 ## Environment variables (optional)
 
 | Variable | Default | Purpose |
-|---|---|---|
+|---|---|---|---|
 | `RABBITMQ_HOST` | `localhost` | RabbitMQ server address |
 | `RABBITMQ_QUEUE` | `events` | Queue name |
 | `RABBITMQ_USER` | `guest` | RabbitMQ username |
 | `RABBITMQ_PASS` | `guest` | RabbitMQ password |
+| `LOG_DIR` | `/app/logs` | Directory for log output (`producer.log`) |
 
 Set them before running, e.g.:
 ```bash
 export RABBITMQ_HOST=192.168.1.50
-python app.py
+LOG_DIR=../logs/producer python app.py
 ```
 
 ---

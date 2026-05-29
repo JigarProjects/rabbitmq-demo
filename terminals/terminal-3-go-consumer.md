@@ -50,8 +50,16 @@ Downloads `github.com/rabbitmq/amqp091-go` (Go RabbitMQ client).
 
 ## 4. Run the consumer
 
+First make sure the log directory exists so Alloy can pick up the logs later:
+
 ```bash
-go run main.go
+mkdir -p ../logs/consumer
+```
+
+Then start the consumer with `LOG_DIR` pointing to that directory:
+
+```bash
+LOG_DIR=../logs/consumer go run main.go
 ```
 
 You should see:
@@ -85,11 +93,12 @@ Received: map[event:page_view timestamp:2026-05-18T12:00:00Z user:alice]
 Same as the producer — both must point to the **same** RabbitMQ instance and queue.
 
 | Variable | Default | Purpose |
-|---|---|---|
+|---|---|---|---|
 | `RABBITMQ_HOST` | `localhost` | RabbitMQ server address |
 | `RABBITMQ_QUEUE` | `events` | Queue name |
 | `RABBITMQ_USER` | `guest` | RabbitMQ username |
 | `RABBITMQ_PASS` | `guest` | RabbitMQ password |
+| `LOG_DIR` | `/app/logs` | Directory for log output (`consumer.log`) |
 
 ---
 

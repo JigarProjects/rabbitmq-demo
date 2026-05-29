@@ -21,9 +21,13 @@ func main() {
 	pass := envOr("RABBITMQ_PASS", "guest")
 
 	logDir := envOr("LOG_DIR", "/app/logs")
-	os.MkdirAll(logDir, 0755)
+	if err := os.MkdirAll(logDir, 0755); err != nil {
+		log.Printf("Failed to create log directory %s: %v", logDir, err)
+	}
 	logFile, err := os.OpenFile(filepath.Join(logDir, "consumer.log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
-	if err == nil {
+	if err != nil {
+		log.Printf("Failed to open log file: %v — falling back to stdout only", err)
+	} else {
 		log.SetOutput(io.MultiWriter(os.Stdout, logFile))
 		defer logFile.Close()
 	}

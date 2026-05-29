@@ -38,19 +38,21 @@ Full observability for the RabbitMQ ingest demo — logs, metrics, and traces.
 
 | Component | Status | Purpose |
 |-----------|--------|---------|
-| **Grafana Alloy** | ✅ Setup | Log collector — reads `./logs/**/*.log` and forwards to Loki |
-| **Loki** | ⏳ Ready | Log storage & query engine |
-| **Grafana** | ⏳ Ready | Visualisation & dashboards |
+| **Grafana Alloy** | ✅ Running | Log collector — reads `./logs/**/*.log` and forwards to Loki |
+| **Loki** | ✅ Running | Log storage & query engine |
+| **Grafana** | ✅ Running | Visualisation & dashboards |
 | **Prometheus** | 📅 Later | Metrics collection & alerts |
 | **Tempo** | 📅 Later | Distributed tracing |
 
 ## Quick Start
 
+> **Prefer running components individually?** See the `terminals/` directory for step-by-step instructions for each service.
+
 ```bash
 # Start the Grafana stack (Alloy + Loki + Grafana)
 docker compose -f grafana/docker-compose.yml up -d
 
-# Open Grafana at http://localhost:3000 (admin / admin)
+# Open Grafana at http://localhost:3000 (anonymous Admin)
 ```
 
 ## Per-service log files
@@ -59,7 +61,7 @@ docker compose -f grafana/docker-compose.yml up -d
 |---------|----------|
 | Python Producer | `logs/producer/producer.log` |
 | Go Consumer | `logs/consumer/consumer.log` |
-| RabbitMQ | `logs/rabbitmq/` (stdout via `docker logs`) |
+| RabbitMQ | `logs/rabbitmq/rabbitmq.log` |
 
 ## Future
 
