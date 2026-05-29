@@ -4,7 +4,7 @@ This terminal runs Alloy, which tails the `./logs/**/*.log` files and forwards t
 
 Make sure **Terminal 1 (RabbitMQ)**, **Terminal 2 (Producer)** and **Terminal 3 (Consumer)** are running so there are log files to tail. Also make sure **Terminal 4 (Loki)** is running — Alloy needs the Loki endpoint.
 
-For **metrics scraping**, Alloy also needs **Terminal 7 (Prometheus)** to be running so it can forward scraped metrics.
+For **metrics scraping**, Alloy also needs **Terminal 7 (Mimir)** to be running so it can forward scraped metrics.
 
 ---
 

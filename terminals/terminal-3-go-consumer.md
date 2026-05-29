@@ -130,6 +130,7 @@ mkdir -p logs/consumer
 
 docker run --rm \
   -e RABBITMQ_HOST=host.docker.internal \
+  -p 2112:2112 \
   -v ./logs/consumer:/app/logs \
   --name go-consumer \
   go-consumer
@@ -145,6 +146,7 @@ mkdir -p logs/consumer
 
 docker run -d \
   -e RABBITMQ_HOST=host.docker.internal \
+  -p 2112:2112 \
   -v ./logs/consumer:/app/logs \
   --name go-consumer \
   go-consumer

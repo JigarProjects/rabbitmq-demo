@@ -1,0 +1,31 @@
+multitenancy_enabled: false
+
+blocks_storage:
+  backend: filesystem
+  filesystem:
+    dir: /data/blocks
+
+compactor:
+  sharding_ring:
+    kvstore:
+      store: inmemory
+  data_dir: /data/compactor
+
+distributor:
+  ring:
+    kvstore:
+      store: inmemory
+
+ingester:
+  ring:
+    kvstore:
+      store: inmemory
+  data_dir: /data/ingester
+
+server:
+  http_listen_port: 9009
+
+store_gateway:
+  sharding_ring:
+    kvstore:
+      store: inmemory

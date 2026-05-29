@@ -34,12 +34,12 @@ prometheus.scrape "default" {
         {"__address__" = "host.docker.internal:2112",  "job" = "consumer"},
     ]
 
-    forward_to = [prometheus.remote_write.prometheus.receiver]
+    forward_to = [prometheus.remote_write.mimir.receiver]
 }
 
-// Forward scraped metrics to the local Prometheus instance
-prometheus.remote_write "prometheus" {
+// Forward scraped metrics to Mimir
+prometheus.remote_write "mimir" {
     endpoint {
-        url = "http://prometheus:9090/api/v1/write"
+        url = "http://mimir:9009/api/v1/push"
     }
 }
