@@ -40,6 +40,7 @@ docker run --rm \
   --name rabbitmq \
   -p 5672:5672 \
   -p 15672:15672 \
+  -p 15692:15692 \
   -e RABBITMQ_LOGS=/var/log/rabbitmq/rabbitmq.log \
   -v ./logs/rabbitmq:/var/log/rabbitmq \
   rabbitmq:4-management
@@ -57,6 +58,7 @@ docker run -d \
   --name rabbitmq \
   -p 5672:5672 \
   -p 15672:15672 \
+  -p 15692:15692 \
   -e RABBITMQ_LOGS=/var/log/rabbitmq/rabbitmq.log \
   -v ./logs/rabbitmq:/var/log/rabbitmq \
   rabbitmq:4-management
@@ -64,6 +66,7 @@ docker run -d \
 
 - **AMQP port** (`5672`) — producer & consumer connect here.
 - **Management UI** (`15672`) — open `http://localhost:15672` in a browser (guest/guest) to inspect queues.
+- **Prometheus metrics** (`15692`) — RabbitMQ exposes built-in metrics for Alloy to scrape.
 
 **Verify it's running:**
 ```bash

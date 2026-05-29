@@ -1,3 +1,5 @@
+// ─── Logs ─────────────────────────────────────────────────────────────────────
+
 // Discover all .log files under /logs/
 local.file_match "logs" {
     path_targets = [
@@ -5,7 +7,7 @@ local.file_match "logs" {
     ]
 }
 
-// Stage 1 — tail the discovered files and forward to Loki
+// Tail the discovered files and forward to Loki
 loki.source.file "scrape" {
     targets    = local.file_match.logs.targets
     forward_to = [loki.write.loki.receiver]
@@ -15,5 +17,29 @@ loki.source.file "scrape" {
 loki.write "loki" {
     endpoint {
         url = "http://loki:3100/loki/api/v1/push"
+    }
+}
+
+// ─── Metrics ──────────────────────────────────────────────────────────────────
+
+// Scrape Prometheus endpoints from all services.
+// Uses host.docker.internal because services run in separate containers
+// not on the grafana-net network.
+prometheus.scrape "default" {
+    scrape_interval = "15s"
+
+    targets = [
+        {"__address__" = "host.docker.internal:15692", "job" = "rabbitmq"},
+        {"__address__" = "host.docker.internal:25001", "job" = "producer"},
+        {"__address__" = "host.docker.internal:2112",  "job" = "consumer"},
+    ]
+
+    forward_to = [prometheus.remote_write.prometheus.receiver]
+}
+
+// Forward scraped metrics to the local Prometheus instance
+prometheus.remote_write "prometheus" {
+    endpoint {
+        url = "http://prometheus:9090/api/v1/write"
     }
 }
