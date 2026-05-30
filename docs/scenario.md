@@ -60,10 +60,20 @@ Loki would be deployed in a microservices mode (ingester, querier, distributor, 
 
 ---
 
+## Mimir (Metrics Storage)
+
+**Dockerized flow:**
+Mimir runs as a single Docker container with filesystem storage. Alloy scrapes Prometheus endpoints from the producer, consumer, and RabbitMQ every 15s and pushes metrics to Mimir via remote write.
+
+**Production scenario:**
+Mimir would be deployed in microservices mode (ingester, distributor, querier, compactor) with object storage (S3, GCS) for long-term retention and horizontal scalability. Multiple Mimir instances would be fronted by a load balancer.
+
+---
+
 ## Grafana (Dashboard)
 
 **Dockerized flow:**
-Grafana runs as a Docker container with an anonymous admin login and a pre-provisioned Loki datasource pointing to `http://loki:3100`.
+Grafana runs as a Docker container with an anonymous admin login and pre-provisioned datasources (Loki for logs, Mimir for metrics).
 
 **Production scenario:**
-Grafana would be deployed with authenticated access (OAuth, LDAP), multiple data sources (Loki, Prometheus, Tempo), alerting rules, and team-based folder permissions. It would run behind a reverse proxy with TLS termination.
+Grafana would be deployed with authenticated access (OAuth, LDAP), multiple data sources (Loki, Mimir, Tempo), alerting rules, and team-based folder permissions. It would run behind a reverse proxy with TLS termination.

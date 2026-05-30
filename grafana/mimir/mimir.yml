@@ -5,27 +5,9 @@ blocks_storage:
   filesystem:
     dir: /data/blocks
 
-compactor:
-  sharding_ring:
-    kvstore:
-      store: inmemory
-  data_dir: /data/compactor
-
-distributor:
-  ring:
-    kvstore:
-      store: inmemory
-
 ingester:
   ring:
-    kvstore:
-      store: inmemory
-  data_dir: /data/ingester
+    replication_factor: 1
 
 server:
   http_listen_port: 9009
-
-store_gateway:
-  sharding_ring:
-    kvstore:
-      store: inmemory

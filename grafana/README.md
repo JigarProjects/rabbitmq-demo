@@ -1,6 +1,6 @@
-# Grafana Observability Stack
+# Grafana Observability Stack (LGTM)
 
-Full observability for the RabbitMQ ingest demo — logs, metrics, and traces.
+Full observability for the RabbitMQ ingest demo — logs (Loki), metrics (Mimir), and traces (Tempo).
 
 ## Architecture
 
@@ -10,23 +10,24 @@ Full observability for the RabbitMQ ingest demo — logs, metrics, and traces.
 │  (broker)    │     │  (Flask)     │     │  (Go)        │
 └──────┬───────┘     └──────┬───────┘     └──────┬───────┘
        │                    │                     │
-       │               logs/producer/        logs/consumer/
+       │  logs/rabbitmq/    │  logs/producer/     │  logs/consumer/
+       │  :15692/metrics    │  :25001/metrics     │  :2112/metrics
        │                    │                     │
        └────────────────────┼─────────────────────┘
                             │
                     ┌───────▼────────┐
-                    │  Grafana Alloy │  ← reads log files
+                    │  Grafana Alloy │  ← reads logs + scrapes metrics
                     │  (collector)   │
                     └───────┬────────┘
                             │
-              ┌─────────────┼─────────────┐
-              │             │             │
-       ┌──────▼─────┐ ┌────▼────┐ ┌──────▼──────┐
-       │   Loki     │ │Prometheus│ │   Tempo     │
-       │  (logs)    │ │(metrics) │ │ (traces)    │
-       └──────┬─────┘ └────┬────┘ └──────┬───────┘
-              │             │             │
-              └─────────────┼─────────────┘
+               ┌────────────┼────────────┐
+               │            │            │
+        ┌──────▼─────┐ ┌───▼────┐ ┌────▼──────┐
+        │   Loki     │ │ Mimir  │ │   Tempo   │
+        │  (logs)    │ │(metrics)│ │ (traces)  │
+        └──────┬─────┘ └───┬────┘ └────┬──────┘
+               │            │            │
+               └────────────┼────────────┘
                             │
                     ┌───────▼────────┐
                     │    Grafana     │
@@ -38,10 +39,10 @@ Full observability for the RabbitMQ ingest demo — logs, metrics, and traces.
 
 | Component | Status | Purpose |
 |-----------|--------|---------|
-| **Grafana Alloy** | ✅ Running | Log collector — reads `./logs/**/*.log` and forwards to Loki |
+| **Grafana Alloy** | ✅ Running | Collector — tails log files & scrapes metrics endpoints, forwards to Loki & Mimir |
 | **Loki** | ✅ Running | Log storage & query engine |
+| **Mimir** | ✅ Running | Metrics storage (Prometheus-compatible) |
 | **Grafana** | ✅ Running | Visualisation & dashboards |
-| **Prometheus** | 📅 Later | Metrics collection & alerts |
 | **Tempo** | 📅 Later | Distributed tracing |
 
 ## Quick Start
@@ -49,7 +50,7 @@ Full observability for the RabbitMQ ingest demo — logs, metrics, and traces.
 > **Prefer running components individually?** See the `terminals/` directory for step-by-step instructions for each service.
 
 ```bash
-# Start the Grafana stack (Alloy + Loki + Grafana)
+# Start the Grafana stack (Alloy + Loki + Mimir + Grafana)
 docker compose -f grafana/docker-compose.yml up -d
 
 # Open Grafana at http://localhost:3000 (anonymous Admin)
@@ -63,8 +64,17 @@ docker compose -f grafana/docker-compose.yml up -d
 | Go Consumer | `logs/consumer/consumer.log` |
 | RabbitMQ | `logs/rabbitmq/rabbitmq.log` |
 
+## Metrics endpoints
+
+| Service | Port | Endpoint |
+|---------|------|----------|
+| Python Producer | `25001` | `/metrics` (prometheus_flask_exporter) |
+| Go Consumer | `2112` | `/metrics` (promhttp) |
+| RabbitMQ | `15692` | `/metrics` (built-in) |
+
+Alloy scrapes these every 15s and forwards to Mimir.
+
 ## Future
 
-- **Prometheus** — scrape metrics from the producer and consumer
 - **Tempo** — receive traces from the producer and consumer
 - **Unified dashboards** — combine logs, metrics, and traces in single views
