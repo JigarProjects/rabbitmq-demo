@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,11 +10,21 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func main() {
@@ -33,6 +44,12 @@ func main() {
 		log.SetOutput(io.MultiWriter(os.Stdout, logFile))
 		defer logFile.Close()
 	}
+
+	tp, err := initTracerProvider()
+	if err != nil {
+		log.Fatalf("Failed to init tracer provider: %v", err)
+	}
+	defer func() { _ = tp.Shutdown(context.Background()) }()
 
 	conn, err := amqp.Dial(fmt.Sprintf("amqp://%s:%s@%s:5672/", user, pass, host))
 	if err != nil {
@@ -69,6 +86,8 @@ func main() {
 		}
 	}()
 
+	tracer := otel.Tracer("go-consumer")
+
 	for {
 		select {
 		case <-ticker.C:
@@ -80,17 +99,69 @@ func main() {
 			if !ok {
 				continue
 			}
+
+			headers := make(map[string]string)
+			for k, v := range d.Headers {
+				if s, ok := v.(string); ok {
+					headers[k] = s
+				}
+			}
+
+			ctx := otel.GetTextMapPropagator().Extract(context.Background(), propagation.MapCarrier(headers))
+
+			_, span := tracer.Start(ctx, "rabbitmq_consume",
+				trace.WithAttributes(
+					attribute.String("messaging.destination", queue),
+					attribute.String("messaging.message_id", d.MessageId),
+				),
+			)
+
 			var payload any
 			if err := json.Unmarshal(d.Body, &payload); err != nil {
 				log.Printf("Received raw: %s", d.Body)
 			} else {
-				log.Printf("Received: %+v", payload)
+				sc := span.SpanContext()
+				log.Printf("Received [trace_id=%s]: %+v", sc.TraceID().String(), payload)
 			}
+
+			span.End()
 		case <-sig:
 			log.Println("Shutting down ...")
 			return
 		}
 	}
+}
+
+func initTracerProvider() (*sdktrace.TracerProvider, error) {
+	ctx := context.Background()
+	endpoint := trimScheme(envOr("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:14317"))
+
+	exporter, err := otlptracegrpc.New(ctx,
+		otlptracegrpc.WithEndpoint(endpoint),
+		otlptracegrpc.WithInsecure(),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithBatcher(exporter),
+		sdktrace.WithResource(resource.NewWithAttributes(
+			semconv.SchemaURL,
+			semconv.ServiceNameKey.String(envOr("OTEL_SERVICE_NAME", "go-consumer")),
+		)),
+	)
+
+	otel.SetTracerProvider(tp)
+	otel.SetTextMapPropagator(propagation.TraceContext{})
+
+	return tp, nil
+}
+
+func trimScheme(endpoint string) string {
+	endpoint = strings.TrimPrefix(endpoint, "http://")
+	endpoint = strings.TrimPrefix(endpoint, "https://")
+	return endpoint
 }
 
 func envOr(key, fallback string) string {
