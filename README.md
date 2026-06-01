@@ -1,121 +1,85 @@
-# RabbitMQ Ingest Pipeline
+# RabbitMQ Ingest Pipeline — Grafana Observability Demo
 
-Two services that communicate via RabbitMQ:
+A demo showcasing Grafana's observability stack (Alloy, Loki, Mimir, Tempo, Grafana) with a simple event pipeline.
 
-- **python-producer/** – REST API that accepts JSON via POST and publishes to a RabbitMQ queue.
-- **go-consumer/** – CLI consumer that reads messages from the same queue and prints them.
+```
+Python Producer (REST API)
+        │  POST /ingest
+        ▼
+     RabbitMQ  (message broker)
+        │  AMQP
+        ▼
+  Go Consumer  (poll & print)
+```
+
+- **Producer:** Python (Flask) — accepts JSON events via HTTP and publishes to RabbitMQ
+- **Consumer:** Go — polls RabbitMQ every 30s, drains all available messages
+- **Broker:** RabbitMQ — message queue between the two
 
 ---
 
-## 1. RabbitMQ Installation
+## How observability is collected
 
-### macOS (Homebrew)
+| Signal | Method | Destination |
+|---|---|---|
+| **Logs** | Written to `logs/` files, scraped by Alloy | Loki |
+| **Metrics** | Prometheus `/metrics` endpoint on each service, scraped by Alloy | Mimir |
+| **Traces** | OpenTelemetry SDK exports via OTLP to Alloy | Tempo |
 
-```bash
-brew install rabbitmq
-brew services start rabbitmq
-```
+All three signals flow through **Grafana Alloy** (the single OTel ingress) before reaching their respective backends. All are visualized in **Grafana**.
 
-### Ubuntu / Debian
+### Tracing detail
 
-```bash
-sudo apt update && sudo apt install -y rabbitmq-server
-sudo systemctl enable --now rabbitmq-server
-```
-
-### Docker (any OS)
-
-```bash
-docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:4-management
-```
-
-- **AMQP port:** `5672`
-- **Management UI:** `http://localhost:15672` (guest/guest)
+The producer creates a span per HTTP request and injects the W3C `traceparent` into AMQP message headers. The consumer extracts it on receive and creates a child span, forming a single distributed trace across both services.
 
 ---
 
-## 2. Python Producer (REST → RabbitMQ)
+## Two ways to run
 
-### Install dependencies
-
-```bash
-cd python-producer
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-### Run
+### Path A — Docker Compose (all services automated)
 
 ```bash
-python app.py
+docker compose up -d                              # rabbitmq, producer, consumer
+cd grafana && docker compose up -d                # alloy, loki, mimir, tempo, grafana
 ```
 
-The server starts on `http://0.0.0.0:25001`.
+Everything starts in the background with default configs. The `docker-compose.yml` files set the required env vars (`OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME`, etc.) automatically.
 
-### Send data
+### Path B — Terminal by terminal (local dev, step by step)
 
-```bash
-curl -X POST http://localhost:25001/ingest \
-  -H "Content-Type: application/json" \
-  -d '{"event": "page_view", "user": "alice", "timestamp": "2026-05-18T12:00:00Z"}'
-```
+Each component runs as a local process, giving you full visibility into its output. The [`terminals/`](terminals/) docs walk through each one:
 
-### Environment variables
-
-| Variable         | Default   | Description            |
-|------------------|-----------|------------------------|
-| `RABBITMQ_HOST`  | localhost | RabbitMQ server host   |
-| `RABBITMQ_QUEUE` | events    | Queue name             |
-| `RABBITMQ_USER`  | guest     | RabbitMQ username      |
-| `RABBITMQ_PASS`  | guest     | RabbitMQ password      |
-| `LOG_DIR`        | /app/logs | Directory for `producer.log` |
+1. [`terminal-1-rabbitmq.md`](terminals/terminal-1-rabbitmq.md) — Start RabbitMQ
+2. [`grafana/README.md`](grafana/README.md) — Start the Grafana stack (Alloy, Loki, Mimir, Tempo, Grafana)
+3. [`terminal-2-python-producer.md`](terminals/terminal-2-python-producer.md) — Run the Flask producer
+4. [`terminal-3-go-consumer.md`](terminals/terminal-3-go-consumer.md) — Run the Go consumer
+5. [`terminal-4-tester.md`](terminals/terminal-4-tester.md) — Send test events
 
 ---
 
-## 3. Go Consumer (RabbitMQ → stdout)
+## Environment variables
 
-### Install dependencies
-
-```bash
-cd go-consumer
-go mod tidy
-```
-
-### Build & run
-
-```bash
-go run main.go
-```
-
-The consumer will print every message it receives from the queue.
-
-### Environment variables
-
-Same as the Python producer – both must point to the same RabbitMQ instance and queue name.
-
-| Variable   | Default   | Description            |
-|------------|-----------|------------------------|
-| `LOG_DIR`  | /app/logs | Directory for `consumer.log` |
+| Variable | Default | Purpose |
+|---|---|---|
+| `RABBITMQ_HOST` | `localhost` | RabbitMQ server address |
+| `RABBITMQ_QUEUE` | `events` | Queue name |
+| `RABBITMQ_USER` | `guest` | RabbitMQ username |
+| `RABBITMQ_PASS` | `guest` | RabbitMQ password |
+| `LOG_DIR` | `/app/logs` | Directory for application logs |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://localhost:14317` | Alloy OTLP endpoint for traces |
+| `OTEL_SERVICE_NAME` | varies | Service name shown in traces |
 
 ---
 
-## Architecture
+## Docs
 
-```
-Machine A                    Network               Machine B
-┌──────────────┐     POST     ┌──────────┐    AMQP    ┌──────────────┐
-│  Python REST │ ─────────→ │ RabbitMQ │ ────────→ │  Go Consumer  │
-│  (producer)  │  :25001    │  :5672   │           │  (consumer)   │
-└──────────────┘             └──────────┘           └──────────────┘
-                                  │
-                          logs/rabbitmq/rabbitmq.log
-```
-
-Set `RABBITMQ_HOST` to the RabbitMQ machine's IP/hostname on both the producer and consumer.
-
----
-
-## Observability stack
-
-See `grafana/README.md` for the full observability setup (Loki + Alloy + Grafana) or `terminals/` for step-by-step instructions to run each component individually.
+| File | What it covers |
+|---|---|---|
+| [`docker-compose.yml`](docker-compose.yml) | Docker Compose for rabbitmq, producer, consumer |
+| [`grafana/docker-compose.yml`](grafana/docker-compose.yml) | Docker Compose for alloy, loki, mimir, tempo, grafana |
+| [`terminals/terminal-1-rabbitmq.md`](terminals/terminal-1-rabbitmq.md) | Terminal path: run RabbitMQ locally or in Docker |
+| [`terminals/terminal-2-python-producer.md`](terminals/terminal-2-python-producer.md) | Terminal path: run the Python producer |
+| [`terminals/terminal-3-go-consumer.md`](terminals/terminal-3-go-consumer.md) | Terminal path: run the Go consumer |
+| [`terminals/terminal-4-tester.md`](terminals/terminal-4-tester.md) | Terminal path: generate test traffic |
+| [`grafana/README.md`](grafana/README.md) | Terminal path: full observability stack setup |
+| [`docs/implement-traces.md`](docs/implement-traces.md) | Distributed tracing architecture & code walkthrough |
