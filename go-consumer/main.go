@@ -23,7 +23,6 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -71,10 +70,10 @@ func main() {
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 
-	ticker := time.NewTicker(1 * time.Minute)
+	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
 
-	log.Printf("Polling queue %q every minute ...", q.Name)
+	log.Printf("Polling queue %q every 30 seconds ...", q.Name)
 
 	go func() {
 		mux := http.NewServeMux()
@@ -91,40 +90,42 @@ func main() {
 	for {
 		select {
 		case <-ticker.C:
-			d, ok, err := ch.Get(q.Name, true)
-			if err != nil {
-				log.Printf("Error getting message: %v", err)
-				continue
-			}
-			if !ok {
-				continue
-			}
-
-			headers := make(map[string]string)
-			for k, v := range d.Headers {
-				if s, ok := v.(string); ok {
-					headers[k] = s
+			for {
+				d, ok, err := ch.Get(q.Name, true)
+				if err != nil {
+					log.Printf("Error getting message: %v", err)
+					break
 				}
+				if !ok {
+					break
+				}
+
+				headers := make(map[string]string)
+				for k, v := range d.Headers {
+					if s, ok := v.(string); ok {
+						headers[k] = s
+					}
+				}
+
+				ctx := otel.GetTextMapPropagator().Extract(context.Background(), propagation.MapCarrier(headers))
+
+				_, span := tracer.Start(ctx, "rabbitmq_consume",
+					trace.WithAttributes(
+						attribute.String("messaging.destination", queue),
+						attribute.String("messaging.message_id", d.MessageId),
+					),
+				)
+
+				var payload any
+				if err := json.Unmarshal(d.Body, &payload); err != nil {
+					log.Printf("Received raw: %s", d.Body)
+				} else {
+					sc := span.SpanContext()
+					log.Printf("Received [trace_id=%s]: %+v", sc.TraceID().String(), payload)
+				}
+
+				span.End()
 			}
-
-			ctx := otel.GetTextMapPropagator().Extract(context.Background(), propagation.MapCarrier(headers))
-
-			_, span := tracer.Start(ctx, "rabbitmq_consume",
-				trace.WithAttributes(
-					attribute.String("messaging.destination", queue),
-					attribute.String("messaging.message_id", d.MessageId),
-				),
-			)
-
-			var payload any
-			if err := json.Unmarshal(d.Body, &payload); err != nil {
-				log.Printf("Received raw: %s", d.Body)
-			} else {
-				sc := span.SpanContext()
-				log.Printf("Received [trace_id=%s]: %+v", sc.TraceID().String(), payload)
-			}
-
-			span.End()
 		case <-sig:
 			log.Println("Shutting down ...")
 			return
@@ -147,8 +148,8 @@ func initTracerProvider() (*sdktrace.TracerProvider, error) {
 	tp := sdktrace.NewTracerProvider(
 		sdktrace.WithBatcher(exporter),
 		sdktrace.WithResource(resource.NewWithAttributes(
-			semconv.SchemaURL,
-			semconv.ServiceNameKey.String(envOr("OTEL_SERVICE_NAME", "go-consumer")),
+			"https://opentelemetry.io/schemas/1.26.0",
+			attribute.String("service.name", envOr("OTEL_SERVICE_NAME", "go-consumer")),
 		)),
 	)
 

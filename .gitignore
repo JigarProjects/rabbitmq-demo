@@ -1,14 +1,18 @@
+# Go binaries
+go-consumer/rabbitmq-consumer
+
 # Python
 __pycache__/
 *.pyc
+*.pyo
 .venv/
-
-# Secrets
-.env
+*.egg-info/
 
 # Logs
 logs/
-*.log
 
-# Go binary (if built locally)
-consumer
+# OS files
+.DS_Store
+
+# Environment files
+.env
