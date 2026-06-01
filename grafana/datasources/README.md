@@ -10,5 +10,6 @@ Current datasources:
 |------|------|------|-----|
 | `loki.yml` | Loki | loki | http://loki:3100 |
 | `mimir.yml` | Mimir | prometheus | http://mimir:9009/prometheus |
+| `tempo.yml` | Tempo | tempo | http://tempo:3200 |
 
 To add a new datasource, create a new `.yml` file here and restart Grafana.

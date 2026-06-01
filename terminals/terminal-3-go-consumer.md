@@ -10,14 +10,14 @@ Make sure **Terminal 1 (RabbitMQ)** is already running before starting this one.
 
 **macOS (Homebrew):**
 ```bash
-brew install go@1.22
+brew install go@1.23
 ```
 
 **Ubuntu / Debian:**
 ```bash
-# Download & install Go 1.22+
-wget https://go.dev/dl/go1.22.5.linux-amd64.tar.gz
-sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.22.5.linux-amd64.tar.gz
+# Download & install Go 1.23+
+wget https://go.dev/dl/go1.23.0.linux-amd64.tar.gz
+sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.23.0.linux-amd64.tar.gz
 echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
 source ~/.bashrc
 ```
@@ -25,7 +25,7 @@ source ~/.bashrc
 **Verify:**
 ```bash
 go version
-# Should show go 1.22.x
+# Should show go 1.23.x
 ```
 
 ---
@@ -64,7 +64,7 @@ LOG_DIR=../logs/consumer OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:14317 OTEL
 
 You should see:
 ```
-Waiting for messages on queue "events" ...
+Polling queue "events" every 30 seconds ...
 ```
 
 The consumer will print every message it receives.

@@ -1,8 +1,8 @@
 # Terminal 6 — Grafana (Dashboard)
 
-This terminal runs Grafana so you can visualise logs collected by Loki.
+This terminal runs Grafana so you can visualise logs (Loki), metrics (Mimir), and traces (Tempo) in one place.
 
-Make sure **Terminal 4 (Loki)** is running — Grafana connects to Loki as its data source.
+Make sure **Terminal 4 (Loki)**, **Terminal 7 (Mimir)**, and **Terminal 8 (Tempo)** are running — Grafana connects to them as data sources.
 
 ---
 
@@ -53,7 +53,7 @@ docker logs -f grafana
 Open http://localhost:3000 in your browser.
 
 - **Anonymous login** is enabled — you should get straight in as Admin.
-- The **Loki** data source is already provisioned (from `./datasources/loki.yml`).
+- All data sources are already provisioned (from `./datasources/`): **Loki** (logs), **Mimir** (metrics), **Tempo** (traces).
 
 ---
 

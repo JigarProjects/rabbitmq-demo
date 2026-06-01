@@ -73,19 +73,22 @@ Each component runs as a local process, giving you full visibility into its outp
 
 ## Docs
 
-| File | What it covers |
-|---|---|---|
-| [`docker-compose.yml`](docker-compose.yml) | Docker Compose for rabbitmq, producer, consumer |
-| [`grafana/docker-compose.yml`](grafana/docker-compose.yml) | Docker Compose for alloy, loki, mimir, tempo, grafana |
-| [`terminals/terminal-1-rabbitmq.md`](terminals/terminal-1-rabbitmq.md) | Terminal path: run RabbitMQ |
-| [`terminals/terminal-2-python-producer.md`](terminals/terminal-2-python-producer.md) | Terminal path: run the Python producer |
-| [`terminals/terminal-3-go-consumer.md`](terminals/terminal-3-go-consumer.md) | Terminal path: run the Go consumer |
-| [`terminals/terminal-4-tester.md`](terminals/terminal-4-tester.md) | Terminal path: generate test traffic |
-| [`grafana/README.md`](grafana/README.md) | Full Grafana stack setup (both paths) |
-| [`URLs.md`](URLs.md) | All service URLs & quick health checks |
-| [`grafana/terminals/terminal-4-loki.md`](grafana/terminals/terminal-4-loki.md) | Terminal path: run Loki |
-| [`grafana/terminals/terminal-5-alloy.md`](grafana/terminals/terminal-5-alloy.md) | Terminal path: run Alloy |
-| [`grafana/terminals/terminal-6-grafana.md`](grafana/terminals/terminal-6-grafana.md) | Terminal path: run Grafana |
-| [`grafana/terminals/terminal-7-mimir.md`](grafana/terminals/terminal-7-mimir.md) | Terminal path: run Mimir |
-| [`grafana/terminals/terminal-8-tempo.md`](grafana/terminals/terminal-8-tempo.md) | Terminal path: run Tempo |
-| [`docs/implement-traces.md`](docs/implement-traces.md) | Distributed tracing architecture & code walkthrough |
+**Pipeline**
+- [`docker-compose.yml`](docker-compose.yml) — RabbitMQ, producer, consumer (Compose path)
+- [`terminals/terminal-1-rabbitmq.md`](terminals/terminal-1-rabbitmq.md) — Run RabbitMQ manually
+- [`terminals/terminal-2-python-producer.md`](terminals/terminal-2-python-producer.md) — Run the producer manually
+- [`terminals/terminal-3-go-consumer.md`](terminals/terminal-3-go-consumer.md) — Run the consumer manually
+- [`terminals/terminal-4-tester.md`](terminals/terminal-4-tester.md) — Generate test traffic
+
+**Grafana stack**
+- [`grafana/docker-compose.yml`](grafana/docker-compose.yml) — Alloy, Loki, Mimir, Tempo, Grafana (Compose path)
+- [`grafana/README.md`](grafana/README.md) — Full stack setup (both paths)
+- [`grafana/terminals/terminal-4-loki.md`](grafana/terminals/terminal-4-loki.md) — Run Loki manually
+- [`grafana/terminals/terminal-5-alloy.md`](grafana/terminals/terminal-5-alloy.md) — Run Alloy manually
+- [`grafana/terminals/terminal-6-grafana.md`](grafana/terminals/terminal-6-grafana.md) — Run Grafana manually
+- [`grafana/terminals/terminal-7-mimir.md`](grafana/terminals/terminal-7-mimir.md) — Run Mimir manually
+- [`grafana/terminals/terminal-8-tempo.md`](grafana/terminals/terminal-8-tempo.md) — Run Tempo manually
+
+**Reference**
+- [`URLs.md`](URLs.md) — All service URLs & quick health checks
+- [`docs/implement-traces.md`](docs/implement-traces.md) — Tracing architecture & code walkthrough

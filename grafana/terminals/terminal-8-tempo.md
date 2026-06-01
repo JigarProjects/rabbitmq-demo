@@ -2,7 +2,7 @@
 
 This terminal runs Tempo so the producer and consumer can export traces to it and Grafana can query them.
 
-Make sure **Terminal 5 (Alloy)** is up — Alloy will receive OTLP traces and forward them to Tempo. Once the applications are instrumented (future terminals), traces will flow automatically.
+Make sure **Terminal 5 (Alloy)** is up — Alloy receives OTLP traces from the producer and consumer and forwards them to Tempo.
 
 ---
 
@@ -63,7 +63,7 @@ docker logs -f tempo
 curl -s http://localhost:3200/api/search
 ```
 
-You should get an empty result `{}` or `{"traces":[]}` — that's fine. Once the producer and consumer are instrumented with OpenTelemetry, traces will start appearing here.
+You should get an empty result `{}` or `{"traces":[]}` — that's fine. Once Terminal 2 and Terminal 3 are running and sending events, traces will appear here.
 
 ---
 
@@ -84,4 +84,4 @@ You should get an empty result `{}` or `{"traces":[]}` — that's fine. Once the
 | `network grafana-net not found` | Run `docker network create grafana-net` first |
 | Container already exists | `docker rm -f tempo` then re-run the `docker run` command |
 | `config.file` not found | Make sure `tempo/tempo.yml` exists and you're running from `grafana/` |
-| No traces visible | The apps aren't instrumented yet — see the implement-traces doc |
+| No traces visible | Make sure Terminal 2 (producer) and Terminal 3 (consumer) are running and receiving events |
