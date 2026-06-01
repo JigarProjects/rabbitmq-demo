@@ -7,8 +7,28 @@ import pika
 from flask import Flask, request, jsonify
 from prometheus_flask_exporter import PrometheusMetrics
 
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.instrumentation.flask import FlaskInstrumentor
+from opentelemetry.propagate import set_global_textmap, inject
+from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
+
+provider = TracerProvider()
+provider.add_span_processor(
+    BatchSpanProcessor(
+        OTLPSpanExporter(
+            endpoint=os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:14317"),
+        )
+    )
+)
+trace.set_tracer_provider(provider)
+set_global_textmap(TraceContextTextMapPropagator())
+
 app = Flask(__name__)
 metrics = PrometheusMetrics(app)
+FlaskInstrumentor().instrument_app(app)
 
 LOG_DIR = os.getenv("LOG_DIR", "/app/logs")
 os.makedirs(LOG_DIR, exist_ok=True)
@@ -28,6 +48,8 @@ RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "localhost")
 RABBITMQ_QUEUE = os.getenv("RABBITMQ_QUEUE", "events")
 RABBITMQ_USER = os.getenv("RABBITMQ_USER", "guest")
 RABBITMQ_PASS = os.getenv("RABBITMQ_PASS", "guest")
+
+tracer = trace.get_tracer(__name__)
 
 def get_rabbitmq_channel():
     credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASS)
@@ -53,13 +75,21 @@ def ingest():
 
     connection, channel = get_rabbitmq_channel()
     try:
+        headers = {}
+        inject(headers)
+
         channel.basic_publish(
             exchange="",
             routing_key=RABBITMQ_QUEUE,
             body=json.dumps(data),
-            properties=pika.BasicProperties(delivery_mode=2),
+            properties=pika.BasicProperties(
+                delivery_mode=2,
+                headers=headers,
+            ),
         )
-        logging.info("Published event: %s", json.dumps(data))
+        span = trace.get_current_span()
+        trace_id = span.get_span_context().trace_id
+        logging.info("Published event [trace_id=%s]: %s", format(trace_id, "032x"), json.dumps(data))
         return jsonify({"status": "published"}), 201
     except Exception as e:
         logging.error("Failed to publish event: %s", str(e))
