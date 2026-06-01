@@ -22,6 +22,8 @@ docker run --rm \
   --name alloy \
   --network grafana-net \
   -p 12345:12345 \
+  -p 14317:14317 \
+  -p 14318:14318 \
   -v ./alloy/config.alloy:/etc/alloy/config.alloy:ro \
   -v ../logs:/logs:ro \
   grafana/alloy:latest \
@@ -38,6 +40,8 @@ docker run -d \
   --name alloy \
   --network grafana-net \
   -p 12345:12345 \
+  -p 14317:14317 \
+  -p 14318:14318 \
   -v ./alloy/config.alloy:/etc/alloy/config.alloy:ro \
   -v ../logs:/logs:ro \
   grafana/alloy:latest \

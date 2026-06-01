@@ -9,6 +9,8 @@ services:
       - ../logs:/logs:ro
     ports:
       - "12345:12345"
+      - "14317:14317"
+      - "14318:14318"
     command:
       - run
       - /etc/alloy/config.alloy

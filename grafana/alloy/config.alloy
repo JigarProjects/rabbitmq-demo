@@ -43,3 +43,36 @@ prometheus.remote_write "mimir" {
         url = "http://mimir:9009/api/v1/push"
     }
 }
+
+// ─── Traces ────────────────────────────────────────────────────────────────────
+
+// Receive OTLP traces from the producer and consumer
+otelcol.receiver.otlp "default" {
+    grpc {
+        endpoint = "0.0.0.0:14317"
+    }
+    http {
+        endpoint = "0.0.0.0:14318"
+    }
+
+    output {
+        traces = [otelcol.processor.batch.default.input]
+    }
+}
+
+// Batch before forwarding
+otelcol.processor.batch "default" {
+    output {
+        traces = [otelcol.exporter.otlp.tempo.input]
+    }
+}
+
+// Forward to Tempo
+otelcol.exporter.otlp "tempo" {
+    client {
+        endpoint = "tempo:4317"
+        tls {
+            insecure = true
+        }
+    }
+}

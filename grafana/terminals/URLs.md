@@ -7,6 +7,8 @@
 | **Producer API** (Flask) | http://localhost:25001 | — | 2 |
 | **Loki** (HTTP API) | http://localhost:3100 | — | 4 |
 | **Alloy** (UI / health) | http://localhost:12345 | — | 5 |
+| **Alloy** (OTLP gRPC) | `localhost:14317` | — | 5 |
+| **Alloy** (OTLP HTTP) | `localhost:14318` | — | 5 |
 | **Grafana** (dashboards) | http://localhost:3000 | anonymous (Admin) | 6 |
 | **Mimir** (API) | http://localhost:9009 | — | 7 |
 | **Tempo** (OTLP gRPC) | `localhost:4317` | — | 8 |

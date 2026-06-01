@@ -232,21 +232,13 @@ distributor:
         http:
           endpoint: "0.0.0.0:4318"
 
-ingester:
-  trace_idle_period: 10s
-  max_block_duration: 5m
-
-compactor:
-  compaction:
-    block_retention: 24h
-
 storage:
   trace:
     backend: local
     wal:
-      path: /tmp/tempo/wal
+      path: /var/tempo/wal
     local:
-      path: /tmp/tempo/blocks
+      path: /var/tempo/blocks
 ```
 
 **Register the Tempo datasource** in `grafana/datasources/` by adding `tempo.yml`:
@@ -274,10 +266,10 @@ Add an OTLP receiver to `grafana/alloy/config.alloy` so Alloy can forward traces
 // Receive OTLP traces from the producer and consumer
 otelcol.receiver.otlp "default" {
     grpc {
-        endpoint = "0.0.0.0:4317"
+        endpoint = "0.0.0.0:14317"
     }
     http {
-        endpoint = "0.0.0.0:4318"
+        endpoint = "0.0.0.0:14318"
     }
 
     output {
@@ -307,8 +299,8 @@ otelcol.exporter.otlp "tempo" {
 
 ```yaml
 ports:
-  - "4317:4317"   # OTLP gRPC
-  - "4318:4318"   # OTLP HTTP
+  - "14317:14317"   # OTLP gRPC
+  - "14318:14318"   # OTLP HTTP
 ```
 
 ---
@@ -428,7 +420,7 @@ trace in Tempo.
 
 | Variable | Default | Services |
 |----------|---------|----------|
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://alloy:4317` | producer, consumer |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://alloy:14317` | producer, consumer |
 | `OTEL_SERVICE_NAME` | `python-producer` / `go-consumer` | producer, consumer |
 | `OTEL_RESOURCE_ATTRIBUTES` | `service.version=1.0` | producer, consumer |
 
@@ -438,7 +430,88 @@ var explicitly and pass it as the endpoint.
 
 ---
 
-## 8. Verification
+## 8. Operational Considerations
+
+### Push vs Pull
+
+Tempo is **push-based**. The app's OTel SDK pushes spans to the collector (Alloy), which pushes to Tempo. Traces are ephemeral and high-cardinality — you can't poll for them like metrics.
+
+### Export Frequency
+
+The OTel SDK's `BatchSpanProcessor` controls how often spans are shipped:
+
+| Setting | Default | Behaviour |
+|---------|---------|-----------|
+| `max_export_batch_size` | 512 spans | Export when buffer fills up |
+| `scheduled_delay` | 5s | Export at most every 5 seconds |
+| `max_queue_size` | 2048 spans | Drops oldest if queue overflows |
+
+So spans are pushed roughly **every 5 seconds** (or sooner if 512 spans accumulate). Within Tempo, incoming spans are written to the WAL immediately, then flushed to storage blocks in ~30s intervals.
+
+### Retention
+
+In our `tempo.yml`:
+
+```yaml
+backend_scheduler:
+  provider:
+    work:
+      compaction:
+        block_retention: 24h
+```
+
+Traces older than 24 hours are automatically deleted. For a demo this is fine; in production you'd set this to weeks or months, and use object storage (S3/GCS) instead of local disk.
+
+### Sampling — The Risk of Missing Errors
+
+By default, **every span** reaches Tempo. At low volume that's fine. But as volume grows you face a choice:
+
+| Approach | Storage cost | Error visibility |
+|----------|-------------|------------------|
+| No sampling | Unlimited — keep everything | 100% of errors visible |
+| Head-based sampling (decide at entry) | Bounded | ❌ May drop the one error in the sampled-out set |
+| Tail-based sampling (decide after complete trace) | Bounded | ✅ All errors kept, sample successful traces |
+
+**Head-based sampling** is risky — if you decide "keep 1 in 10 traces" at the HTTP entry point, an error that happens 1 in 100 requests will be visible only 10% of the time. You miss 9 out of 10 errors.
+
+**Tail-based sampling** fixes this: Alloy waits until the trace completes, checks if any span has an error status, and keeps it unconditionally. Successful traces are sampled at a configurable rate.
+
+Example Alloy tail-sampling config:
+
+```alloy
+otelcol.processor.tail_sampling "default" {
+    decision_wait = 30s
+    policies {
+        name = "errors"
+        type = "status_code"
+        status_code {
+            status_codes = ["ERROR"]
+        }
+    }
+    policies {
+        name = "successful"
+        type = "probabilistic"
+        probabilistic {
+            sampling_percentage = 10
+        }
+    }
+    output {
+        traces = [otelcol.exporter.otlp.tempo.input]
+    }
+}
+```
+
+With this: every error trace is kept, only 10% of successful traces are stored. **You never miss errors**, and storage stays bounded.
+
+### Pipeline: Where Sampling Fits
+
+```
+App → OTel SDK (BatchSpanProcessor, ~5s) → Alloy (tail_sampling, 30s window) → Tempo (retention, 24h+)
+```
+
+---
+
+## 9. Verification
 
 ```bash
 # Send a test event
