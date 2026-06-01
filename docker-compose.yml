@@ -24,6 +24,7 @@ services:
     environment:
       RABBITMQ_HOST: rabbitmq
       OTEL_EXPORTER_OTLP_ENDPOINT: http://host.docker.internal:14317
+      OTEL_SERVICE_NAME: python-producer
     volumes:
       - ./logs/producer:/app/logs
     depends_on:
@@ -36,6 +37,7 @@ services:
     environment:
       RABBITMQ_HOST: rabbitmq
       OTEL_EXPORTER_OTLP_ENDPOINT: http://host.docker.internal:14317
+      OTEL_SERVICE_NAME: go-consumer
     volumes:
       - ./logs/consumer:/app/logs
     depends_on:

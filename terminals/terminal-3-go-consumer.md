@@ -59,7 +59,7 @@ mkdir -p ../logs/consumer
 Then start the consumer with `LOG_DIR` pointing to that directory:
 
 ```bash
-LOG_DIR=../logs/consumer OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:14317 go run main.go
+LOG_DIR=../logs/consumer OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:14317 OTEL_SERVICE_NAME=go-consumer go run main.go
 ```
 
 You should see:
@@ -100,6 +100,7 @@ Same as the producer — both must point to the **same** RabbitMQ instance and q
 | `RABBITMQ_PASS` | `guest` | RabbitMQ password |
 | `LOG_DIR` | `/app/logs` | Directory for log output (`consumer.log`) |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://localhost:14317` | OTLP gRPC endpoint for trace export |
+| `OTEL_SERVICE_NAME` | `go-consumer` | Service name displayed in traces |
 
 ---
 
@@ -132,6 +133,7 @@ mkdir -p logs/consumer
 docker run --rm \
   -e RABBITMQ_HOST=host.docker.internal \
   -e OTEL_EXPORTER_OTLP_ENDPOINT=http://host.docker.internal:14317 \
+  -e OTEL_SERVICE_NAME=go-consumer \
   -p 2112:2112 \
   -v ./logs/consumer:/app/logs \
   --name go-consumer \
