@@ -5,6 +5,7 @@
 | **RabbitMQ Management UI** | http://localhost:15672 | `guest` / `guest` | 1 |
 | **RabbitMQ Prometheus** | http://localhost:15692/metrics | — | 1 |
 | **Producer API** (Flask) | http://localhost:25001 | — | 2 |
+| **Consumer Metrics** (Prometheus) | http://localhost:2112/metrics | — | 3 |
 | **Loki** (HTTP API) | http://localhost:3100 | — | 4 |
 | **Alloy** (UI / health) | http://localhost:12345 | — | 5 |
 | **Alloy** (OTLP gRPC) | `localhost:14317` | — | 5 |
