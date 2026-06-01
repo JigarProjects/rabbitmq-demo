@@ -59,7 +59,7 @@ mkdir -p ../logs/consumer
 Then start the consumer with `LOG_DIR` pointing to that directory:
 
 ```bash
-LOG_DIR=../logs/consumer go run main.go
+LOG_DIR=../logs/consumer OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:14317 go run main.go
 ```
 
 You should see:
@@ -93,12 +93,13 @@ Received: map[event:page_view timestamp:2026-05-18T12:00:00Z user:alice]
 Same as the producer — both must point to the **same** RabbitMQ instance and queue.
 
 | Variable | Default | Purpose |
-|---|---|---|---|
+|---|---|---|---|---|
 | `RABBITMQ_HOST` | `localhost` | RabbitMQ server address |
 | `RABBITMQ_QUEUE` | `events` | Queue name |
 | `RABBITMQ_USER` | `guest` | RabbitMQ username |
 | `RABBITMQ_PASS` | `guest` | RabbitMQ password |
 | `LOG_DIR` | `/app/logs` | Directory for log output (`consumer.log`) |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://localhost:14317` | OTLP gRPC endpoint for trace export |
 
 ---
 
@@ -130,6 +131,7 @@ mkdir -p logs/consumer
 
 docker run --rm \
   -e RABBITMQ_HOST=host.docker.internal \
+  -e OTEL_EXPORTER_OTLP_ENDPOINT=http://host.docker.internal:14317 \
   -p 2112:2112 \
   -v ./logs/consumer:/app/logs \
   --name go-consumer \
@@ -146,6 +148,7 @@ mkdir -p logs/consumer
 
 docker run -d \
   -e RABBITMQ_HOST=host.docker.internal \
+  -e OTEL_EXPORTER_OTLP_ENDPOINT=http://host.docker.internal:14317 \
   -p 2112:2112 \
   -v ./logs/consumer:/app/logs \
   --name go-consumer \

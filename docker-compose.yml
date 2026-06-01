@@ -23,6 +23,7 @@ services:
       - "25001:25001"
     environment:
       RABBITMQ_HOST: rabbitmq
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://host.docker.internal:14317
     volumes:
       - ./logs/producer:/app/logs
     depends_on:
@@ -34,6 +35,7 @@ services:
     container_name: go-consumer
     environment:
       RABBITMQ_HOST: rabbitmq
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://host.docker.internal:14317
     volumes:
       - ./logs/consumer:/app/logs
     depends_on:

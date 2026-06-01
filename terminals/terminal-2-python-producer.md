@@ -65,7 +65,7 @@ mkdir -p ../logs/producer
 Then start the server with `LOG_DIR` pointing to that directory:
 
 ```bash
-LOG_DIR=../logs/producer python app.py
+LOG_DIR=../logs/producer OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:14317 python app.py
 ```
 
 The server starts on `http://0.0.0.0:25001`.
@@ -89,17 +89,18 @@ You should see the event appear in **Terminal 3 (Go Consumer)**.
 ## Environment variables (optional)
 
 | Variable | Default | Purpose |
-|---|---|---|---|
+|---|---|---|---|---|
 | `RABBITMQ_HOST` | `localhost` | RabbitMQ server address |
 | `RABBITMQ_QUEUE` | `events` | Queue name |
 | `RABBITMQ_USER` | `guest` | RabbitMQ username |
 | `RABBITMQ_PASS` | `guest` | RabbitMQ password |
 | `LOG_DIR` | `/app/logs` | Directory for log output (`producer.log`) |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://localhost:14317` | OTLP gRPC endpoint for trace export |
 
 Set them before running, e.g.:
 ```bash
 export RABBITMQ_HOST=192.168.1.50
-LOG_DIR=../logs/producer python app.py
+LOG_DIR=../logs/producer OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:14317 python app.py
 ```
 
 ---
@@ -133,6 +134,7 @@ mkdir -p logs/producer
 docker run --rm \
   -p 25001:25001 \
   -e RABBITMQ_HOST=host.docker.internal \
+  -e OTEL_EXPORTER_OTLP_ENDPOINT=http://host.docker.internal:14317 \
   -v ./logs/producer:/app/logs \
   --name python-producer \
   python-producer
@@ -149,6 +151,7 @@ mkdir -p logs/producer
 docker run -d \
   -p 25001:25001 \
   -e RABBITMQ_HOST=host.docker.internal \
+  -e OTEL_EXPORTER_OTLP_ENDPOINT=http://host.docker.internal:14317 \
   -v ./logs/producer:/app/logs \
   --name python-producer \
   python-producer
