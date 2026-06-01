@@ -28,6 +28,17 @@ services:
     command:
       - --config.file=/etc/mimir/mimir.yml
 
+  tempo:
+    image: grafana/tempo:latest
+    container_name: grafana-tempo
+    restart: unless-stopped
+    command: ["-config.file=/etc/tempo/tempo.yml"]
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    volumes:
+      - ./tempo/tempo.yml:/etc/tempo/tempo.yml:ro
+
   loki:
     image: grafana/loki:latest
     container_name: grafana-loki
