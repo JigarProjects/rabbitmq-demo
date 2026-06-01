@@ -8,6 +8,10 @@ blocks_storage:
 ingester:
   ring:
     replication_factor: 1
+    heartbeat_period: 5s
+    heartbeat_timeout: 10m
+    kvstore:
+      store: memberlist
 
 server:
   http_listen_port: 9009
