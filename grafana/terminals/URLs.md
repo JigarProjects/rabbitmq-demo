@@ -9,6 +9,9 @@
 | **Alloy** (UI / health) | http://localhost:12345 | — | 5 |
 | **Grafana** (dashboards) | http://localhost:3000 | anonymous (Admin) | 6 |
 | **Mimir** (API) | http://localhost:9009 | — | 7 |
+| **Tempo** (OTLP gRPC) | `localhost:4317` | — | 8 |
+| **Tempo** (OTLP HTTP) | `localhost:4318` | — | 8 |
+| **Tempo** (API / search) | http://localhost:3200 | — | 8 |
 
 ## Quick checks
 
@@ -38,6 +41,9 @@ curl -s http://localhost:12345/-/health
 
 # Mimir readiness
 curl -s http://localhost:9009/ready
+
+# Tempo readiness
+curl -s http://localhost:3200/ready
 
 # Grafana
 open http://localhost:3000
