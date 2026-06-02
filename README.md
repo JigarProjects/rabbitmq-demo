@@ -36,7 +36,17 @@ The producer creates a span per HTTP request and injects the W3C `traceparent` i
 
 ### Path A — Single script (recommended)
 
-Starts all 8 containers individually with `docker run -d`, no compose:
+Starts all 8 containers individually with `docker run -d`, no compose.
+
+Before the first run, RabbitMQ's log directory needs write access for its
+container UID (RabbitMQ's entrypoint chowns only the data dir, not logs):
+
+```bash
+mkdir -p /home/ubuntu/logs/rabbitmq
+chmod o+w /home/ubuntu/logs/rabbitmq
+```
+
+Then:
 
 ```bash
 python scripts/start_all.py                                    # start everything + traffic

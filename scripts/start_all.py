@@ -54,11 +54,22 @@ def ensure_log_dirs(logs_home):
         print(f"  Ensuring {path}")
 
 
+def image_exists(name):
+    result = run(["docker", "image", "inspect", name], check=False)
+    return result.returncode == 0
+
+
 def build_images():
-    print("  Building python-producer ...")
-    run(["docker", "build", "-t", "python-producer", os.path.join(PROJECT_DIR, "python-producer")])
-    print("  Building go-consumer ...")
-    run(["docker", "build", "-t", "go-consumer", os.path.join(PROJECT_DIR, "go-consumer")])
+    if image_exists("python-producer"):
+        print("  python-producer image exists, skipping build")
+    else:
+        print("  Building python-producer ...")
+        run(["docker", "build", "-t", "python-producer", os.path.join(PROJECT_DIR, "python-producer")])
+    if image_exists("go-consumer"):
+        print("  go-consumer image exists, skipping build")
+    else:
+        print("  Building go-consumer ...")
+        run(["docker", "build", "-t", "go-consumer", os.path.join(PROJECT_DIR, "go-consumer")])
 
 
 def container_exists(name):
