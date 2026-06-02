@@ -45,7 +45,8 @@ def ensure_network():
 
 
 def ensure_log_dirs(logs_home):
-    for sub in ["rabbitmq", "producer", "consumer", "loki", "tempo", "mimir", "alloy", "grafana"]:
+    # Only services that natively write log files to disk
+    for sub in ["rabbitmq", "producer", "consumer", "grafana"]:
         path = os.path.join(logs_home, sub)
         os.makedirs(path, exist_ok=True)
         print(f"  Ensuring {path}")
@@ -169,10 +170,7 @@ def start_services(logs_home):
             "docker", "run", "-d",
             "--name", "loki",
             "--network", NETWORK_NAME,
-            "-v", f"{logs_home_abs}/loki:/var/log/loki",
-            "--entrypoint", "sh",
             "grafana/loki:latest",
-            "-c", "/usr/bin/loki 2>&1 | tee /var/log/loki/loki.log",
         ])
         time.sleep(3)
 
@@ -188,10 +186,8 @@ def start_services(logs_home):
             "--name", "tempo",
             "--network", NETWORK_NAME,
             "-v", f"{grafana_dir}/tempo/tempo.yml:/etc/tempo/tempo.yml:ro",
-            "-v", f"{logs_home_abs}/tempo:/var/log/tempo",
-            "--entrypoint", "sh",
             "grafana/tempo:latest",
-            "-c", "/tempo -config.file=/etc/tempo/tempo.yml 2>&1 | tee /var/log/tempo/tempo.log",
+            "-config.file=/etc/tempo/tempo.yml",
         ])
         time.sleep(3)
 
@@ -207,10 +203,8 @@ def start_services(logs_home):
             "--name", "mimir",
             "--network", NETWORK_NAME,
             "-v", f"{grafana_dir}/mimir/mimir.yml:/etc/mimir/mimir.yml:ro",
-            "-v", f"{logs_home_abs}/mimir:/var/log/mimir",
-            "--entrypoint", "sh",
             "grafana/mimir:latest",
-            "-c", "/mimir --config.file=/etc/mimir/mimir.yml 2>&1 | tee /var/log/mimir/mimir.log",
+            "--config.file=/etc/mimir/mimir.yml",
         ])
         time.sleep(3)
 
@@ -226,11 +220,10 @@ def start_services(logs_home):
             "--name", "alloy",
             "--network", NETWORK_NAME,
             "-v", f"{grafana_dir}/alloy/config.alloy:/etc/alloy/config.alloy:ro",
-            "-v", f"{logs_home_abs}/alloy:/var/log/alloy",
             "-v", f"{logs_home_abs}:/logs:ro",
-            "--entrypoint", "sh",
             "grafana/alloy:latest",
-            "-c", "/usr/local/bin/alloy run /etc/alloy/config.alloy --server.http.listen-addr=0.0.0.0:12345 2>&1 | tee /var/log/alloy/alloy.log",
+            "run", "/etc/alloy/config.alloy",
+            "--server.http.listen-addr=0.0.0.0:12345",
         ])
         time.sleep(3)
 
