@@ -1,9 +1,14 @@
 // ─── Logs ─────────────────────────────────────────────────────────────────────
+//
+// Only rabbitmq, producer, and consumer logs are shipped to Loki.
+// Grafana stack logs (loki, tempo, mimir, alloy, grafana) stay on disk
+// and are NOT forwarded — they can be inspected with journalctl/docker logs.
 
-// Discover all .log files under /logs/
 local.file_match "logs" {
     path_targets = [
-        {"__path__" = "/logs/**/*.log"},
+        {"__path__" = "/logs/rabbitmq/*.log"},
+        {"__path__" = "/logs/producer/*.log"},
+        {"__path__" = "/logs/consumer/*.log"},
     ]
 }
 

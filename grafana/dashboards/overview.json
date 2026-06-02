@@ -1,0 +1,257 @@
+{
+  "title": "RabbitMQ Ingest — Overview",
+  "uid": "rabbitmq-ingest-overview",
+  "tags": ["rabbitmq-ingest", "demo"],
+  "schemaVersion": 39,
+  "version": 1,
+  "timezone": "browser",
+  "editable": true,
+  "refresh": "15s",
+  "time": { "from": "now-15m", "to": "now" },
+  "timepicker": {},
+  "panels": [
+    {
+      "gridPos": { "h": 6, "w": 4, "x": 0, "y": 0 },
+      "type": "stat",
+      "title": "RabbitMQ",
+      "datasource": { "type": "prometheus", "uid": "Mimir" },
+      "targets": [
+        {
+          "expr": "up{job=\"rabbitmq\"}",
+          "refId": "A",
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": { "text": "DOWN", "color": "red" },
+                "1": { "text": "UP", "color": "green" }
+              }
+            }
+          ],
+          "color": { "mode": "thresholds" }
+        }
+      }
+    },
+    {
+      "gridPos": { "h": 6, "w": 4, "x": 4, "y": 0 },
+      "type": "stat",
+      "title": "Producer",
+      "datasource": { "type": "prometheus", "uid": "Mimir" },
+      "targets": [
+        {
+          "expr": "up{job=\"producer\"}",
+          "refId": "A",
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": { "text": "DOWN", "color": "red" },
+                "1": { "text": "UP", "color": "green" }
+              }
+            }
+          ],
+          "color": { "mode": "thresholds" }
+        }
+      }
+    },
+    {
+      "gridPos": { "h": 6, "w": 4, "x": 8, "y": 0 },
+      "type": "stat",
+      "title": "Consumer",
+      "datasource": { "type": "prometheus", "uid": "Mimir" },
+      "targets": [
+        {
+          "expr": "up{job=\"consumer\"}",
+          "refId": "A",
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": { "text": "DOWN", "color": "red" },
+                "1": { "text": "UP", "color": "green" }
+              }
+            }
+          ],
+          "color": { "mode": "thresholds" }
+        }
+      }
+    },
+    {
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 6 },
+      "type": "timeseries",
+      "title": "RabbitMQ Queue Depth",
+      "datasource": { "type": "prometheus", "uid": "Mimir" },
+      "targets": [
+        {
+          "expr": "rabbitmq_queue_messages_ready{queue=\"events\"}",
+          "refId": "A",
+          "legendFormat": "ready"
+        },
+        {
+          "expr": "rabbitmq_queue_messages_unacked{queue=\"events\"}",
+          "refId": "B",
+          "legendFormat": "unacked"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        }
+      }
+    },
+    {
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 6 },
+      "type": "timeseries",
+      "title": "HTTP Request Rate",
+      "datasource": { "type": "prometheus", "uid": "Mimir" },
+      "targets": [
+        {
+          "expr": "sum(rate(flask_http_request_total{job=\"producer\"}[1m]))",
+          "refId": "A",
+          "legendFormat": "requests/s"
+        },
+        {
+          "expr": "sum(rate(flask_http_request_total{job=\"producer\", status=~\"5..\"}[1m])) or vector(0)",
+          "refId": "B",
+          "legendFormat": "errors/s"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        }
+      }
+    },
+    {
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 14 },
+      "type": "timeseries",
+      "title": "Request Latency (p99)",
+      "datasource": { "type": "prometheus", "uid": "Mimir" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(flask_http_request_duration_seconds_bucket{job=\"producer\"}[1m])) by (le))",
+          "refId": "A",
+          "legendFormat": "p99"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      }
+    },
+    {
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 14 },
+      "type": "timeseries",
+      "title": "Go Runtime — Goroutines",
+      "datasource": { "type": "prometheus", "uid": "Mimir" },
+      "targets": [
+        {
+          "expr": "go_goroutines{job=\"consumer\"}",
+          "refId": "A",
+          "legendFormat": "goroutines"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        }
+      }
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 22 },
+      "type": "timeseries",
+      "title": "Log Volume by Service",
+      "datasource": { "type": "loki", "uid": "Loki" },
+      "targets": [
+        {
+          "expr": "sum by (filename) (rate({filename=~\"(rabbitmq|producer|consumer).*\"}[1m]))",
+          "refId": "A",
+          "legendFormat": "{{ filename }}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "cps"
+        }
+      }
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 22 },
+      "type": "stat",
+      "title": "Error Logs (last 5m)",
+      "datasource": { "type": "loki", "uid": "Loki" },
+      "targets": [
+        {
+          "expr": "count_over_time({filename=~\"/logs/(rabbitmq|producer|consumer)/.*\"} |= \"error\" [5m])",
+          "refId": "A",
+          "legendFormat": "errors"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        }
+      }
+    },
+    {
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 30 },
+      "type": "tempo",
+      "title": "Recent Traces",
+      "datasource": { "type": "tempo", "uid": "tempo" },
+      "targets": [
+        {
+          "query": "{ .service.name = \"python-producer\" || .service.name = \"go-consumer\" }",
+          "queryType": "traceql",
+          "refId": "A"
+        }
+      ]
+    }
+  ]
+}

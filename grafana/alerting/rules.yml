@@ -1,0 +1,73 @@
+apiVersion: 1
+
+groups:
+  - name: rabbitmq-ingest
+    folder: Demo Alerts
+    interval: 30s
+    rules:
+      - uid: service_down
+        title: Service Down
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: Mimir
+            model:
+              expr: up{job="rabbitmq"} == 0 or up{job="producer"} == 0 or up{job="consumer"} == 0
+              interval: ""
+              intervalMs: 15000
+              maxDataPoints: 100
+              refId: A
+        noDataState: Alerting
+        execErrState: Error
+        for: 1m
+        annotations:
+          summary: "{{ $labels.job }} is down"
+        labels:
+          severity: critical
+
+      - uid: queue_depth_high
+        title: Queue Depth High
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: Mimir
+            model:
+              expr: rabbitmq_queue_messages_ready{queue="events"} > 100
+              interval: ""
+              intervalMs: 15000
+              maxDataPoints: 100
+              refId: A
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "RabbitMQ queue depth is {{ $values.A.Value }}"
+        labels:
+          severity: warning
+
+      - uid: high_error_rate
+        title: High Error Rate
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: Loki
+            model:
+              expr: count_over_time({filename=~"/logs/(rabbitmq|producer|consumer)/.*"} |= "error" [5m]) > 5
+              queryType: range
+              refId: A
+        noDataState: OK
+        execErrState: Error
+        for: 0s
+        annotations:
+          summary: "{{ $values.A.Value }} error logs in the last 5 minutes"
+        labels:
+          severity: warning

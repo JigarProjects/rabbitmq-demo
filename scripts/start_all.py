@@ -21,9 +21,18 @@ CONTAINERS = [
 NETWORK_NAME = "grafana-net"
 
 
-def run(cmd, **kwargs):
+def run(cmd, check=True, **kwargs):
     print(f"  $ {' '.join(cmd)}")
-    return subprocess.run(cmd, capture_output=True, text=True, **kwargs)
+    result = subprocess.run(cmd, capture_output=True, text=True, **kwargs)
+    if check and result.returncode != 0:
+        print(f"  FAILED (exit code {result.returncode})", file=sys.stderr)
+        if result.stdout.strip():
+            print(f"  stdout: {result.stdout.strip()}", file=sys.stderr)
+        if result.stderr.strip():
+            print(f"  stderr: {result.stderr.strip()}", file=sys.stderr)
+        print(file=sys.stderr)
+        sys.exit(1)
+    return result
 
 
 def ensure_network():
@@ -36,7 +45,7 @@ def ensure_network():
 
 
 def ensure_log_dirs(logs_home):
-    for sub in ["rabbitmq", "producer", "consumer"]:
+    for sub in ["rabbitmq", "producer", "consumer", "loki", "tempo", "mimir", "alloy", "grafana"]:
         path = os.path.join(logs_home, sub)
         os.makedirs(path, exist_ok=True)
         print(f"  Ensuring {path}")
@@ -50,12 +59,12 @@ def build_images():
 
 
 def container_exists(name):
-    result = run(["docker", "ps", "-a", "--filter", f"name=^{name}$", "--format", "{{.Names}}"])
+    result = run(["docker", "ps", "-a", "--filter", f"name=^{name}$", "--format", "{{.Names}}"], check=False)
     return name in result.stdout.strip().split()
 
 
 def container_running(name):
-    result = run(["docker", "ps", "--filter", f"name=^{name}$", "--format", "{{.Names}}"])
+    result = run(["docker", "ps", "--filter", f"name=^{name}$", "--format", "{{.Names}}"], check=False)
     return name in result.stdout.strip().split()
 
 
@@ -63,6 +72,7 @@ def wait_for_healthy(name, timeout=60):
     for i in range(timeout // 2):
         result = run(
             ["docker", "inspect", "--format={{.State.Health.Status}}", name],
+            check=False,
         )
         status = result.stdout.strip()
         if status == "healthy":
@@ -76,10 +86,10 @@ def wait_for_healthy(name, timeout=60):
 def stop_container(name):
     if container_running(name):
         print(f"  Stopping {name} ...")
-        run(["docker", "stop", name])
+        run(["docker", "stop", name], check=False)
     if container_exists(name):
         print(f"  Removing {name} ...")
-        run(["docker", "rm", name])
+        run(["docker", "rm", name], check=False)
 
 
 def start_services(logs_home):
@@ -159,7 +169,10 @@ def start_services(logs_home):
             "docker", "run", "-d",
             "--name", "loki",
             "--network", NETWORK_NAME,
+            "-v", f"{logs_home_abs}/loki:/var/log/loki",
+            "--entrypoint", "sh",
             "grafana/loki:latest",
+            "-c", "/usr/bin/loki 2>&1 | tee /var/log/loki/loki.log",
         ])
         time.sleep(3)
 
@@ -175,8 +188,10 @@ def start_services(logs_home):
             "--name", "tempo",
             "--network", NETWORK_NAME,
             "-v", f"{grafana_dir}/tempo/tempo.yml:/etc/tempo/tempo.yml:ro",
+            "-v", f"{logs_home_abs}/tempo:/var/log/tempo",
+            "--entrypoint", "sh",
             "grafana/tempo:latest",
-            "-config.file=/etc/tempo/tempo.yml",
+            "-c", "/tempo -config.file=/etc/tempo/tempo.yml 2>&1 | tee /var/log/tempo/tempo.log",
         ])
         time.sleep(3)
 
@@ -192,8 +207,10 @@ def start_services(logs_home):
             "--name", "mimir",
             "--network", NETWORK_NAME,
             "-v", f"{grafana_dir}/mimir/mimir.yml:/etc/mimir/mimir.yml:ro",
+            "-v", f"{logs_home_abs}/mimir:/var/log/mimir",
+            "--entrypoint", "sh",
             "grafana/mimir:latest",
-            "--config.file=/etc/mimir/mimir.yml",
+            "-c", "/mimir --config.file=/etc/mimir/mimir.yml 2>&1 | tee /var/log/mimir/mimir.log",
         ])
         time.sleep(3)
 
@@ -209,10 +226,11 @@ def start_services(logs_home):
             "--name", "alloy",
             "--network", NETWORK_NAME,
             "-v", f"{grafana_dir}/alloy/config.alloy:/etc/alloy/config.alloy:ro",
+            "-v", f"{logs_home_abs}/alloy:/var/log/alloy",
             "-v", f"{logs_home_abs}:/logs:ro",
+            "--entrypoint", "sh",
             "grafana/alloy:latest",
-            "run", "/etc/alloy/config.alloy",
-            "--server.http.listen-addr=0.0.0.0:12345",
+            "-c", "/usr/local/bin/alloy run /etc/alloy/config.alloy --server.http.listen-addr=0.0.0.0:12345 2>&1 | tee /var/log/alloy/alloy.log",
         ])
         time.sleep(3)
 
@@ -229,8 +247,13 @@ def start_services(logs_home):
             "--network", NETWORK_NAME,
             "-p", "3000:3000",
             "-v", f"{grafana_dir}/datasources:/etc/grafana/provisioning/datasources",
+            "-v", f"{grafana_dir}/dashboards:/etc/grafana/provisioning/dashboards",
+            "-v", f"{grafana_dir}/alerting:/etc/grafana/provisioning/alerting",
+            "-v", f"{logs_home_abs}/grafana:/var/log/grafana",
             "-e", "GF_AUTH_ANONYMOUS_ENABLED=true",
             "-e", "GF_AUTH_ANONYMOUS_ORG_ROLE=Admin",
+            "-e", "GF_LOG_MODE=console file",
+            "-e", "GF_LOG_DIR=/var/log/grafana",
             "grafana/grafana:latest",
         ])
 
@@ -281,7 +304,7 @@ def clean_services(logs_home):
 
 
 def main():
-    default_logs = os.path.join(PROJECT_DIR, "logs")
+    default_logs = "/home/ubuntu/logs"
 
     parser = argparse.ArgumentParser(description="Start/stop all services using docker run commands")
     parser.add_argument("--logs-home", default=default_logs,
@@ -294,6 +317,10 @@ def main():
     logs_home = os.path.abspath(args.logs_home) if args.logs_home else None
 
     if args.clean:
+        if args.logs_home == "/home/ubuntu/logs":
+            print("WARNING: --clean with default logs-home is dangerous.", file=sys.stderr)
+            print("Refusing to clean. Specify a custom --logs-home or remove the dir manually.", file=sys.stderr)
+            sys.exit(1)
         clean_services(logs_home)
     elif args.stop:
         stop_services()
