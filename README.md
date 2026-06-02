@@ -90,5 +90,6 @@ Each component runs as a local process. The [`terminals/`](terminals/) docs walk
 | Alloy config | [`grafana/alloy/config.alloy`](grafana/alloy/config.alloy) |
 | Service URLs & health checks | [`URLs.md`](URLs.md) |
 | Tracing architecture | [`docs/implement-traces.md`](docs/implement-traces.md) |
+| Trace root spans FAQ | [`docs/trace-roots.md`](docs/trace-roots.md) |
 | Terminal guides | [`terminals/`](terminals/) |
 | Troubleshooting | [`docs/troubleshoot.md`](docs/troubleshoot.md) |
