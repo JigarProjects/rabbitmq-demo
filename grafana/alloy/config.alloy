@@ -6,9 +6,9 @@
 
 local.file_match "logs" {
     path_targets = [
-        {"__path__" = "/logs/rabbitmq/*.log"},
-        {"__path__" = "/logs/producer/*.log"},
-        {"__path__" = "/logs/consumer/*.log"},
+        {"__path__" = "/logs/rabbitmq/*.log", "service" = "rabbitmq"},
+        {"__path__" = "/logs/producer/*.log", "service" = "producer"},
+        {"__path__" = "/logs/consumer/*.log", "service" = "consumer"},
     ]
 }
 
