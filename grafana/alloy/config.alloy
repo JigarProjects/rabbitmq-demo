@@ -23,15 +23,14 @@ loki.write "loki" {
 // ─── Metrics ──────────────────────────────────────────────────────────────────
 
 // Scrape Prometheus endpoints from all services.
-// Uses host.docker.internal because services run in separate containers
-// not on the grafana-net network.
+// All containers are on the grafana-net network, so we use container names.
 prometheus.scrape "default" {
     scrape_interval = "15s"
 
     targets = [
-        {"__address__" = "host.docker.internal:15692", "job" = "rabbitmq"},
-        {"__address__" = "host.docker.internal:25001", "job" = "producer"},
-        {"__address__" = "host.docker.internal:2112",  "job" = "consumer"},
+        {"__address__" = "rabbitmq:15692", "job" = "rabbitmq"},
+        {"__address__" = "python-producer:25001", "job" = "producer"},
+        {"__address__" = "go-consumer:2112",  "job" = "consumer"},
     ]
 
     forward_to = [prometheus.remote_write.mimir.receiver]
