@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import os
+import signal
 import subprocess
 import sys
 import time
@@ -19,6 +20,7 @@ CONTAINERS = [
 ]
 
 NETWORK_NAME = "grafana-net"
+TRAFFIC_PID_FILE = os.path.join(PROJECT_DIR, ".traffic_pid")
 
 
 def run(cmd, check=True, **kwargs):
@@ -296,6 +298,34 @@ def clean_services(logs_home):
     print("Clean complete")
 
 
+def start_traffic():
+    script = os.path.join(PROJECT_DIR, "test", "continuous_traffic.py")
+    logfile = os.path.join(PROJECT_DIR, "traffic.log")
+    open(logfile, "a").close()
+    proc = subprocess.Popen(
+        [sys.executable, script],
+        stdout=open(logfile, "a"),
+        stderr=subprocess.STDOUT,
+    )
+    with open(TRAFFIC_PID_FILE, "w") as f:
+        f.write(str(proc.pid))
+    print(f"Traffic generator started (pid {proc.pid}), logging to {logfile}")
+
+
+def stop_traffic():
+    if os.path.exists(TRAFFIC_PID_FILE):
+        with open(TRAFFIC_PID_FILE) as f:
+            pid = int(f.read().strip())
+        try:
+            os.kill(pid, signal.SIGTERM)
+            print(f"Traffic generator (pid {pid}) stopped")
+        except ProcessLookupError:
+            print("Traffic generator was not running")
+        os.remove(TRAFFIC_PID_FILE)
+    else:
+        subprocess.run(["pkill", "-f", "continuous_traffic.py"], capture_output=True, check=False)
+
+
 def main():
     default_logs = "/home/ubuntu/logs"
 
@@ -305,6 +335,8 @@ def main():
     parser.add_argument("--stop", action="store_true", help="Stop all services")
     parser.add_argument("--status", action="store_true", help="Show container status")
     parser.add_argument("--clean", action="store_true", help="Stop, remove containers, network, and logs")
+    parser.add_argument("--no-traffic", action="store_true", help="Start services without traffic generator")
+    parser.add_argument("--stop-traffic", action="store_true", help="Stop the background traffic generator")
     args = parser.parse_args()
 
     logs_home = os.path.abspath(args.logs_home) if args.logs_home else None
@@ -314,13 +346,20 @@ def main():
             print("WARNING: --clean with default logs-home is dangerous.", file=sys.stderr)
             print("Refusing to clean. Specify a custom --logs-home or remove the dir manually.", file=sys.stderr)
             sys.exit(1)
+        stop_traffic()
         clean_services(logs_home)
     elif args.stop:
+        stop_traffic()
         stop_services()
     elif args.status:
         show_status()
+    elif args.stop_traffic:
+        stop_traffic()
+    elif args.no_traffic:
+        start_services(logs_home)
     else:
         start_services(logs_home)
+        start_traffic()
 
 
 if __name__ == "__main__":

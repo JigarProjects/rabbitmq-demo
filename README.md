@@ -39,18 +39,14 @@ The producer creates a span per HTTP request and injects the W3C `traceparent` i
 Starts all 8 containers individually with `docker run -d`, no compose:
 
 ```bash
-python scripts/start_all.py                                    # start everything
+python scripts/start_all.py                                    # start everything + traffic
+python scripts/start_all.py --no-traffic                       # start services only, no traffic
 python scripts/start_all.py --status                           # check container status
-python scripts/start_all.py --stop                             # stop all containers
+python scripts/start_all.py --stop                             # stop all containers + traffic
+python scripts/start_all.py --stop-traffic                     # stop traffic only
 ```
 
-All containers join a shared `grafana-net` bridge network and resolve each other by name. Logs go to `/home/ubuntu/logs/` (override with `--logs-home`).
-
-Then generate traffic:
-
-```bash
-python test/continuous_traffic.py                              # burst of 1–5 events every 60s
-```
+All containers join a shared `grafana-net` bridge network and resolve each other by name. Logs go to `/home/ubuntu/logs/` (override with `--logs-home`). Traffic generator starts automatically — use `--no-traffic` to skip it.
 
 Open http://localhost:3000 — the **RabbitMQ Ingest — Overview** dashboard is already provisioned with live panels for logs, metrics, and traces. Alert rules in the **Demo Alerts** folder evaluate automatically.
 
