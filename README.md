@@ -92,4 +92,5 @@ Each component runs as a local process. The [`terminals/`](terminals/) docs walk
 | Tracing architecture | [`docs/implement-traces.md`](docs/implement-traces.md) |
 | Trace root spans FAQ | [`docs/trace-roots.md`](docs/trace-roots.md) |
 | Terminal guides | [`terminals/`](terminals/) |
+| Example Grafana queries (Loki, Tempo, Mimir) | [`queries.md`](queries.md) |
 | Troubleshooting | [`docs/troubleshoot.md`](docs/troubleshoot.md) |
