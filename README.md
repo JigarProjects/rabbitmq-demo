@@ -89,6 +89,7 @@ Each component runs as a local process. The [`terminals/`](terminals/) docs walk
 | Pre-provisioned alert rules | [`grafana/alerting/rules.yml`](grafana/alerting/rules.yml) |
 | Alloy config | [`grafana/alloy/config.alloy`](grafana/alloy/config.alloy) |
 | Service URLs & health checks | [`URLs.md`](URLs.md) |
+| End-to-end demo walkthrough | [`demo.md`](demo.md) |
 | Tracing architecture | [`docs/implement-traces.md`](docs/implement-traces.md) |
 | Trace root spans FAQ | [`docs/trace-roots.md`](docs/trace-roots.md) |
 | Terminal guides | [`terminals/`](terminals/) |

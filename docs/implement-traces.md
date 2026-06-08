@@ -19,6 +19,48 @@ service via message headers. Every span and log line emitted during the request'
 carries this trace ID, letting you query "show me everything that happened for this one
 request" in Grafana.
 
+### Trace creation
+
+1. **Producer (Python/Flask)** — When an HTTP POST comes to `/ingest`, the
+   `FlaskInstrumentor` automatically creates a **root span** for that HTTP request.
+   A new 128-bit `trace_id` is generated.
+
+2. **Span propagation** — The producer calls `inject(headers)` which writes the W3C
+   `traceparent` header (containing `trace_id` and `span_id`) into the RabbitMQ AMQP
+   message headers before publishing.
+
+3. **Consumer (Go)** — On receiving the message from RabbitMQ, it reads the
+   `traceparent` header and calls `Extract()` to restore the trace context. It then
+   creates a child span named `rabbitmq_consume` — same `trace_id`, new `span_id`.
+
+### How spans are exported
+
+Both the producer and consumer use the **OpenTelemetry SDK** with a
+`BatchSpanProcessor` + `OTLPSpanExporter`:
+
+- **Not real-time per request.** The `BatchSpanProcessor` collects spans in memory
+  and exports them in batches.
+- **Trigger conditions** (OTel defaults): every **5 seconds** *or* when the buffer
+  reaches **2048 spans** — whichever comes first.
+- The exporter sends OTLP protobuf via **gRPC** to Grafana Alloy (port 14317).
+
+### Path to storage
+
+```
+Span → BatchSpanProcessor (buffered up to 5s) → OTLP gRPC → Alloy (port 14317)
+                                                             → batcher (Alloy)
+                                                             → Tempo (port 4317)
+```
+
+Alloy does a second batch step (`otelcol.processor.batch`) before forwarding to
+Tempo, which then stores the trace spans to disk.
+
+### Key implication
+
+For this demo (a few requests per minute), you won't see traces in Grafana
+instantly — you'll wait up to ~5 seconds for the OTel SDK batch to flush, plus
+whatever latency Alloy's own batching adds.
+
 ---
 
 ## 1. Core Concept: Correlation ID / Trace ID
@@ -436,17 +478,106 @@ var explicitly and pass it as the endpoint.
 
 Tempo is **push-based**. The app's OTel SDK pushes spans to the collector (Alloy), which pushes to Tempo. Traces are ephemeral and high-cardinality — you can't poll for them like metrics.
 
-### Export Frequency
+### Export Pipeline Mechanics
 
-The OTel SDK's `BatchSpanProcessor` controls how often spans are shipped:
+#### Inside the OTel SDK: `BatchSpanProcessor`
 
-| Setting | Default | Behaviour |
-|---------|---------|-----------|
-| `max_export_batch_size` | 512 spans | Export when buffer fills up |
-| `scheduled_delay` | 5s | Export at most every 5 seconds |
-| `max_queue_size` | 2048 spans | Drops oldest if queue overflows |
+Both the Python and Go SDKs use the same internal mechanism — a **`BatchSpanProcessor`** that
+buffers finished spans and exports them in batches via the `OTLPSpanExporter`.
 
-So spans are pushed roughly **every 5 seconds** (or sooner if 512 spans accumulate). Within Tempo, incoming spans are written to the WAL immediately, then flushed to storage blocks in ~30s intervals.
+It works like this:
+
+```
+  Span ends
+     │
+     ▼
+ ┌─────────────────────┐
+ │   Internal queue    │  max_queue_size = 2048 spans
+ │   (ring buffer)     │  (oldest dropped if full)
+ └────────┬────────────┘
+          │
+          ▼  (either trigger)
+ ┌─────────────────────┐
+ │   Export attempt    │  picks up to max_export_batch_size
+ │   (blocking gRPC)   │  spans from the queue
+ └────────┬────────────┘
+          │
+          ▼
+   OTLPSpanExporter → Alloy (gRPC port 14317)
+```
+
+**What triggers an export?**
+
+Two independent triggers — **whichever fires first** causes an export:
+
+| Trigger | Default value | Behaviour |
+|---------|---------------|-----------|
+| `scheduled_delay` | 5 000 ms | A timer starts when the first span is queued. When it fires, all buffered spans are exported. The timer resets after each export. |
+| `max_export_batch_size` | 512 spans | If the buffer fills to 512 spans *before* the timer fires, an export is triggered immediately. The timer is cancelled and restarted. |
+
+**Why two triggers?** The timer guarantees progress even at low volume (you never wait
+more than 5s). The batch-size limit guarantees the buffer never grows unbounded at high
+volume.
+
+**Queue overflow:** If the internal 2048-span queue is full and a new span ends, the
+**oldest span in the queue is dropped** (first-in-first-out eviction). No error is
+raised — the span is silently lost. This is the SDK's backpressure mechanism:
+increase `max_queue_size` or reduce sampling if this happens.
+
+**Export failures:** If the gRPC call to Alloy fails (e.g., Alloy is down, network
+issue), the `BatchSpanProcessor` retries with exponential backoff internally for up to
+a configurable timeout, then retries on the next scheduled export. Spans remain in the
+queue until successfully exported or evicted by overflow.
+
+#### Alloy's own batching
+
+After the OTel SDK exports to Alloy, Alloy applies **another batch processor** before
+forwarding to Tempo:
+
+```alloy
+otelcol.processor.batch "default" {
+    output {
+        traces = [otelcol.exporter.otlp.tempo.input]
+    }
+}
+```
+
+This uses the same dual-trigger pattern but with Alloy's defaults:
+
+| Setting | Default |
+|---------|---------|
+| `timeout` | 200 ms |
+| `send_batch_size` | 8192 spans |
+
+So Alloy may re-batch spans from multiple app instances into larger chunks before
+forwarding to Tempo.
+
+#### End-to-end timing
+
+```
+Span created (HTTP request received)
+    │
+    ▼  ~0 ms (instant)
+Span ends (HTTP response sent)
+    │
+    ▼  wait ... wait ...
+BatchSpanProcessor fires (≤ 5s)
+    │
+    ▼  ~1-5ms (local gRPC)
+Alloy receives span + batches (≤ 200ms)
+    │
+    ▼  ~1-5ms (local gRPC)
+Tempo receives span → writes to WAL (immediate)
+    │
+    ▼  ~30s (background flush)
+Tempo flushes WAL to storage block (queryable after flush)
+```
+
+**Total time from request → visible in Tempo: typically 5-10 seconds.**
+
+Within Tempo, spans are written to the Write-Ahead Log (WAL) on ingest (immediately
+durable), but they are only queryable after being flushed to a storage block, which
+happens roughly every 30 seconds in the default config.
 
 ### Retention
 
