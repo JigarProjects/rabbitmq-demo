@@ -2,6 +2,7 @@ apiVersion: 1
 
 datasources:
   - name: Loki
+    uid: loki
     type: loki
     access: proxy
     url: http://loki:3100
@@ -11,6 +12,14 @@ datasources:
         - name: trace_id
           type: text
           matcherRegex: trace_id=([a-f0-9]{32})
-          url: '/explore?orgId=1&left=%5B%22now-1h%22%2C%22now%22%2C%22tempo%22%2C%7B%22queryType%22%3A%22traceId%22%2C%22query%22%3A%22${__value.raw}%22%7D%5D'
+          url: '/a/grafana-exploretraces-app/explore?var-ds=tempo&traceId=$${__value.raw}'
           urlDisplayLabel: View Trace
           datasourceUid: tempo
+    correlations:
+      - targetUID: tempo
+        label: View Trace
+        description: Open related trace in Tempo
+        config:
+          field: trace_id
+          target:
+            expr: 'trace_id=$${__value.raw}'

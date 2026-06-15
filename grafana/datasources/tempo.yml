@@ -14,3 +14,11 @@ datasources:
         filterBySpanID: true
         spanStartTimeShift: -1h
         spanEndTimeShift: 1h
+    correlations:
+      - targetUID: loki
+        label: View Logs
+        description: Show related logs in Loki for this trace
+        config:
+          field: trace_id
+          target:
+            expr: '{filename=~"/logs/(producer|consumer)/.+"} |= "$${__value.raw}"'
