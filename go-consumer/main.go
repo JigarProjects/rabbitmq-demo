@@ -121,7 +121,7 @@ func main() {
 					log.Printf("Received raw: %s", d.Body)
 				} else {
 					sc := span.SpanContext()
-					log.Printf("Received [trace_id=%s]: %+v", sc.TraceID().String(), payload)
+					log.Printf("Received [trace_id=%s span_id=%s]: %+v", sc.TraceID().String(), sc.SpanID().String(), payload)
 				}
 
 				span.End()
