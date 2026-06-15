@@ -10,5 +10,7 @@ datasources:
       derivedFields:
         - name: trace_id
           type: text
-          datasourceUid: tempo
           matcherRegex: trace_id=([a-f0-9]{32})
+          url: '/explore?orgId=1&left=%5B%22now-1h%22%2C%22now%22%2C%22tempo%22%2C%7B%22queryType%22%3A%22traceId%22%2C%22query%22%3A%22${__value.raw}%22%7D%5D'
+          urlDisplayLabel: View Trace
+          datasourceUid: tempo

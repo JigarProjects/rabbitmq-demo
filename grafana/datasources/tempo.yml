@@ -11,5 +11,6 @@ datasources:
       tracesToLogs:
         datasourceUid: loki
         filterByTraceID: true
+        filterBySpanID: true
         spanStartTimeShift: -1h
         spanEndTimeShift: 1h

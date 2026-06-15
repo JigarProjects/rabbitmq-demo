@@ -16,3 +16,4 @@ logs/
 
 # Environment files
 .env
+AGENTS.md
