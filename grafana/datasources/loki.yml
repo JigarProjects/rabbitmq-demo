@@ -12,7 +12,7 @@ datasources:
         - name: trace_id
           type: text
           matcherRegex: trace_id=([a-f0-9]{32})
-          url: '/a/grafana-exploretraces-app/explore?var-ds=tempo&traceId=$${__value.raw}'
+          url: '/a/grafana-exploretraces-app/explore?from=now-1h&to=now&var-ds=tempo&actionView=breakdown&traceId=$${__value.raw}'
           urlDisplayLabel: View Trace
           datasourceUid: tempo
     correlations:
