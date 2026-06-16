@@ -89,7 +89,7 @@ def ingest():
         )
         span = trace.get_current_span()
         sc = span.get_span_context()
-        logging.info("Published event [trace_id=%s span_id=%s]: %s",
+        logging.info("Published event trace_id=%s span_id=%s : %s",
             format(sc.trace_id, "032x"), format(sc.span_id, "016x"), json.dumps(data))
         return jsonify({"status": "published"}), 201
     except Exception as e:
