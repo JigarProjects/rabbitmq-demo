@@ -10,7 +10,9 @@ datasources:
     jsonData:
       tracesToLogs:
         datasourceUid: loki
-        filterByTraceID: true
+        filterByTraceID: false
         spanStartTimeShift: -1h
         spanEndTimeShift: 1h
+        customQuery: true
+        query: '{service_name=~".+"} |= "${__trace.traceId}"'
 
