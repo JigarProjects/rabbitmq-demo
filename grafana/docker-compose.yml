@@ -2,7 +2,7 @@ services:
 
   alloy:
     image: grafana/alloy:latest
-    container_name: grafana-alloy
+    container_name: alloy
     restart: unless-stopped
     volumes:
       - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
@@ -21,7 +21,7 @@ services:
 
   mimir:
     image: grafana/mimir:latest
-    container_name: grafana-mimir
+    container_name: mimir
     restart: unless-stopped
     ports:
       - "9009:9009"
@@ -32,7 +32,7 @@ services:
 
   tempo:
     image: grafana/tempo:latest
-    container_name: grafana-tempo
+    container_name: tempo
     restart: unless-stopped
     command: ["-config.file=/etc/tempo/tempo.yml"]
     ports:
@@ -43,14 +43,14 @@ services:
 
   loki:
     image: grafana/loki:latest
-    container_name: grafana-loki
+    container_name: loki
     restart: unless-stopped
     ports:
       - "3100:3100"
 
   grafana:
     image: grafana/grafana:latest
-    container_name: grafana-grafana
+    container_name: grafana
     restart: unless-stopped
     ports:
       - "3000:3000"

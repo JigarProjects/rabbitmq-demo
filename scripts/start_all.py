@@ -59,17 +59,14 @@ def image_exists(name):
     return result.returncode == 0
 
 
-def build_images():
-    if image_exists("python-producer"):
-        print("  python-producer image exists, skipping build")
-    else:
-        print("  Building python-producer ...")
-        run(["docker", "build", "-t", "python-producer", os.path.join(PROJECT_DIR, "python-producer")])
-    if image_exists("go-consumer"):
-        print("  go-consumer image exists, skipping build")
-    else:
-        print("  Building go-consumer ...")
-        run(["docker", "build", "-t", "go-consumer", os.path.join(PROJECT_DIR, "go-consumer")])
+def build_images(force=False):
+    for name, path in [("python-producer", "python-producer"), ("go-consumer", "go-consumer")]:
+        if force or not image_exists(name):
+            action = "Rebuilding" if force else "Building"
+            print(f"  {action} {name} ...")
+            run(["docker", "build", "-t", name, os.path.join(PROJECT_DIR, path)])
+        else:
+            print(f"  {name} image exists, skipping build")
 
 
 def container_exists(name):
@@ -106,14 +103,20 @@ def stop_container(name):
         run(["docker", "rm", name], check=False)
 
 
-def start_services(logs_home):
+def start_services(logs_home, rebuild_pc=False):
     print("=" * 60)
     print(f"Starting all services (logs_home={logs_home})")
     print("=" * 60)
 
     ensure_network()
     ensure_log_dirs(logs_home)
-    build_images()
+
+    if rebuild_pc:
+        print("\n  --rebuild-pc: stopping old producer/consumer ...")
+        stop_container("python-producer")
+        stop_container("go-consumer")
+
+    build_images(force=rebuild_pc)
 
     grafana_dir = os.path.join(PROJECT_DIR, "grafana")
     logs_home_abs = os.path.abspath(logs_home)
@@ -348,6 +351,7 @@ def main():
     parser.add_argument("--clean", action="store_true", help="Stop, remove containers, network, and logs")
     parser.add_argument("--no-traffic", action="store_true", help="Start services without traffic generator")
     parser.add_argument("--stop-traffic", action="store_true", help="Stop the background traffic generator")
+    parser.add_argument("--rebuild-pc", action="store_true", help="Rebuild python-producer & go-consumer images then restart")
     args = parser.parse_args()
 
     logs_home = os.path.abspath(args.logs_home) if args.logs_home else None
@@ -367,7 +371,10 @@ def main():
     elif args.stop_traffic:
         stop_traffic()
     elif args.no_traffic:
-        start_services(logs_home)
+        start_services(logs_home, rebuild_pc=args.rebuild_pc)
+    elif args.rebuild_pc:
+        start_services(logs_home, rebuild_pc=True)
+        start_traffic()
     else:
         start_services(logs_home)
         start_traffic()
