@@ -77,3 +77,10 @@ Grafana runs as a Docker container with an anonymous admin login and pre-provisi
 
 **Production scenario:**
 Grafana would be deployed with authenticated access (OAuth, LDAP), multiple data sources (Loki, Mimir, Tempo), alerting rules, and team-based folder permissions. It would run behind a reverse proxy with TLS termination.
+
+---
+
+## See also
+
+- [`queries.md`](../queries.md) — example queries for all signals
+- [`docs/metrics.md`](metrics.md) — how metrics are scraped and stored

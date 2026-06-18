@@ -159,3 +159,10 @@ prometheus.remote_write "multi" {
 ### Service-Level Metrics (app code)
 
 For more domain-specific metrics (e.g. published events count, consume latency), each app can register custom counters/histograms using the same Prometheus client libraries already imported.
+
+---
+
+## See also
+
+- [`queries.md`](../queries.md) — example Mimir/PromQL queries
+- [`docs/scenario.md`](scenario.md) — how this compares to production

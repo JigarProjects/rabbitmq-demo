@@ -27,3 +27,10 @@ In the Tempo API response, traces appear with `"rootServiceName":"python-produce
 ## Service Graph
 
 The "Service Graph" panel in Grafana is separate from individual trace queries. It requires Tempo's `metrics_generator` to be enabled, which is not currently configured. When enabled, it produces Prometheus-style metrics from traces, and Grafana visualises the service-to-service edges from those metrics.
+
+---
+
+## See also
+
+- [`queries.md`](../queries.md) — example Tempo TraceQL queries
+- [`docs/implement-traces.md`](implement-traces.md) — how tracing works end-to-end

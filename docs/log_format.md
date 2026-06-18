@@ -33,3 +33,10 @@ trace_id=179593dbf2dd2465096b0226e792df1c span_id=eb5b6bbcbf872562 : map[...]
 ## Lesson
 
 Keep log formats simple. Brackets around key=value pairs seem harmless visually but break structured parsing. Use space-delimited `key=value` format for logfmt-compatible logs.
+
+---
+
+## See also
+
+- [`queries.md`](../queries.md) — example Loki/Tempo/Mimir queries
+- [`docs/implement-traces.md`](implement-traces.md) — how tracing works end-to-end

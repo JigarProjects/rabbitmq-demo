@@ -168,3 +168,10 @@ This replaces `local.file_match` + `loki.source.file` — no volume mounts neede
 - **Label cardinality** — avoid unique values per log line (e.g. request IDs) as labels. Use them in the log content instead.
 - **Stage order matters** — a `stage.regex` must come before `stage.labels` if you want to use the capture group as a label.
 - **Alloy UI** — open `http://localhost:12345` to see component health and pipeline status.
+
+---
+
+## See also
+
+- [`queries.md`](../queries.md) — example Loki queries
+- [`docs/log_format.md`](log_format.md) — log format and trace correlation

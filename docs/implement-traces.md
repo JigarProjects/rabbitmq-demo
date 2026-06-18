@@ -43,3 +43,11 @@ curl -X POST http://localhost:25001/ingest \
 
 # Traces appear in Tempo within ~5-10s, then queryable in Grafana
 ```
+
+---
+
+## See also
+
+- [`queries.md`](../queries.md) — example Loki/Tempo/Mimir queries
+- [`docs/log_format.md`](log_format.md) — why log format matters for trace correlation
+- [`docs/trace-roots.md`](trace-roots.md) — why the consumer never appears as root

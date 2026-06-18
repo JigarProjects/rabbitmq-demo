@@ -64,4 +64,11 @@ srw-rw---- 1 root docker 0 Jun  2 10:00 /var/run/docker.sock   ← correct now
 ```
 $ docker ps
 CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS   NAMES
+
+---
+
+## See also
+
+- [`queries.md`](../queries.md) — example queries for all signals
+- [`docs/scenario.md`](scenario.md) — how this compares to production
 ```
